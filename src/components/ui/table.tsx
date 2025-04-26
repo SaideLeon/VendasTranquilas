@@ -5,13 +5,7 @@ import { cn } from "@/lib/utils"
 const Table = React.forwardRef<
   HTMLTableElement,
   React.HTMLAttributes<HTMLTableElement>
->(({ className, ...props }, ref) => (
-  <table
-    ref={ref}
-    className={cn(
-      "w-full caption-bottom text-sm min-w-max",
-      className
-    )}
+>(({ className, ...props }, ref) => (<table  ref={ref}  className={cn("w-full caption-bottom text-sm min-w-max",  className  )}
     {...props}
   /> // Removed whitespace from here
 ))
