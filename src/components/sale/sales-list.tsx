@@ -11,7 +11,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Trash2, ArrowDownCircle, ArrowUpCircle, AlertTriangle, PackageX } from "lucide-react";
+import { Trash2, ArrowDownCircle, ArrowUpCircle, AlertTriangle, PackageX, ShoppingCart } from "lucide-react"; // Import ShoppingCart
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import {
