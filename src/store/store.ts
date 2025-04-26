@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import type { Product, Sale, ReportData } from '@/types';
+import { calculateUnitCost } from '@/types'; // Import the helper
 import { v4 as uuidv4 } from 'uuid';
 import { DEFAULT_CURRENCY_CODE } from '@/config/currencies';
 
@@ -12,7 +13,7 @@ interface AppState {
   currency: string; // ISO 4217 currency code (e.g., 'BRL', 'USD')
   setIsOnline: (status: boolean) => void;
   setCurrency: (currencyCode: string) => void;
-  addProduct: (productData: Omit<Product, 'id' | 'createdAt'>) => Product;
+  addProduct: (productData: Omit<Product, 'id' | 'createdAt' | 'initialQuantity'>) => Product; // Form doesn't submit initialQuantity
   updateProduct: (product: Product) => void;
   deleteProduct: (productId: string) => void;
   getProductById: (productId: string) => Product | undefined;
@@ -26,42 +27,50 @@ interface AppState {
   syncData: () => Promise<void>;
 }
 
-// Helper function to calculate profit
-// The calculation logic remains the same, regardless of currency.
-const calculateProfit = (saleValue: number, acquisitionValue: number, quantitySold: number): number => {
-    return saleValue - (acquisitionValue * quantitySold);
-};
-
 // Helper function to calculate reports
 // Values are assumed to be in the globally selected currency.
 const calculateReports = (products: Product[], sales: Sale[]): ReportData => {
-    let totalInvestment = 0;
-    products.forEach(p => totalInvestment += p.acquisitionValue * p.quantity);
+    // Calculate total investment based on current stock and unit cost
+    const totalInvestment = products.reduce((total, product) => {
+        const { cost: unitCost } = calculateUnitCost(product);
+        const currentValue = unitCost * product.quantity; // Current value = unit cost * current quantity
+        return total + currentValue;
+    }, 0);
 
     let totalRevenue = 0;
     let totalProfit = 0;
     let totalLossValue = 0;
     const productProfits: { [key: string]: { name: string, profit: number, lossValue: number } } = {};
 
+    // Initialize product profits/losses map
     products.forEach(p => {
         productProfits[p.id] = { name: p.name, profit: 0, lossValue: 0 };
     });
 
-
+    // Calculate revenue, profit, and loss from sales records
     sales.forEach(s => {
-        totalRevenue += s.saleValue;
-        totalProfit += s.profit;
-        if (s.isLoss) {
-             const product = products.find(p => p.id === s.productId);
-             const lossAmount = product ? product.acquisitionValue * s.quantitySold : 0;
+         const product = products.find(p => p.id === s.productId);
+         const { cost: unitCost } = calculateUnitCost(product); // Get unit cost
+
+         totalRevenue += s.saleValue; // Revenue is simply the sum of sale values
+
+         if (s.isLoss) {
+             const lossAmount = unitCost * s.quantitySold; // Loss value is based on unit cost
              totalLossValue += lossAmount;
+             totalProfit -= lossAmount; // Losses reduce total profit
              if (productProfits[s.productId]) {
                  productProfits[s.productId].lossValue += lossAmount;
+                 productProfits[s.productId].profit -= lossAmount; // Loss reduces product-specific profit
              }
-        }
-        if (productProfits[s.productId]) {
-            productProfits[s.productId].profit += s.profit;
-        }
+         } else {
+             // Profit from a normal sale = sale value - cost of goods sold
+             const costOfGoodsSold = unitCost * s.quantitySold;
+             const saleProfit = s.saleValue - costOfGoodsSold;
+             totalProfit += saleProfit;
+             if (productProfits[s.productId]) {
+                 productProfits[s.productId].profit += saleProfit;
+             }
+         }
     });
 
     let mostProfitableProduct: { name: string; profit: number } | null = null;
@@ -72,7 +81,7 @@ const calculateReports = (products: Product[], sales: Sale[]): ReportData => {
         if (data.profit > 0 && (!mostProfitableProduct || data.profit > mostProfitableProduct.profit)) {
             mostProfitableProduct = { name: data.name, profit: data.profit };
         }
-         // Find highest loss (must have positive loss value)
+         // Find highest loss (must have positive loss value accumulated)
          if (data.lossValue > 0 && (!highestLossProduct || data.lossValue > highestLossProduct.lossValue)) {
              highestLossProduct = { name: data.name, lossValue: data.lossValue };
         }
@@ -82,10 +91,10 @@ const calculateReports = (products: Product[], sales: Sale[]): ReportData => {
     return {
         totalProducts: products.length,
         totalSales: sales.length,
-        totalInvestment,
+        totalInvestment, // Based on current stock value using unit cost
         totalRevenue,
-        totalProfit,
-        totalLossValue,
+        totalProfit, // Net profit after considering COGS and losses
+        totalLossValue, // Total cost of items marked as loss
         mostProfitableProduct,
         highestLossProduct,
     };
@@ -104,29 +113,32 @@ export const useStore = create<AppState>()(
        setCurrency: (currencyCode) => set({ currency: currencyCode }),
 
       addProduct: (productData) => {
+        // When adding a new product, the initialQuantity is the quantity provided in the form
         const newProduct: Product = {
           ...productData,
           id: uuidv4(),
+          initialQuantity: productData.quantity, // Set initialQuantity on creation
+          // quantityInStock is deprecated, use quantity
           createdAt: new Date().toISOString(),
         };
         set((state) => ({ products: [...state.products, newProduct] }));
-        // Attempt background sync after change
         get().syncData().catch(err => console.warn("Background sync failed:", err));
         return newProduct;
       },
 
       updateProduct: (updatedProduct) => {
+        // When updating, initialQuantity generally shouldn't change unless it's a major stock correction.
+        // The current logic assumes updates modify name, acquisitionValue, or current quantity.
+        // If acquisitionValue or quantity changes, unit cost is recalculated implicitly.
         set((state) => ({
           products: state.products.map((p) =>
-            p.id === updatedProduct.id ? updatedProduct : p
-          ),
+            p.id === updatedProduct.id ? { ...updatedProduct } : p // Just spread the updated product
+         ),
         }));
-         // Attempt background sync after change
         get().syncData().catch(err => console.warn("Background sync failed:", err));
       },
 
        deleteProduct: (productId) => {
-         // Also delete related sales to maintain data integrity
          const productToDelete = get().products.find(p => p.id === productId);
          if (!productToDelete) return;
 
@@ -134,8 +146,7 @@ export const useStore = create<AppState>()(
           products: state.products.filter((p) => p.id !== productId),
           sales: state.sales.filter((s) => s.productId !== productId) // Remove sales related to the deleted product
         }));
-         // Attempt background sync after change
-        get().syncData().catch(err => console.warn("Background sync failed:", err));
+         get().syncData().catch(err => console.warn("Background sync failed:", err));
       },
 
        getProductById: (productId) => {
@@ -147,38 +158,41 @@ export const useStore = create<AppState>()(
         const product = get().getProductById(saleData.productId);
         if (!product) {
           console.error("Product not found for sale:", saleData.productId);
-          // Potentially throw an error or return a specific status
           return null;
         }
+        // Check against current quantity (product.quantity)
         if (product.quantity < saleData.quantitySold && !saleData.isLoss) {
              console.error("Insufficient stock for sale:", saleData.productId, "Available:", product.quantity, "Requested:", saleData.quantitySold);
-             // Optionally, prevent sale or handle insufficient stock scenario
              return null; // Indicate sale couldn't be added due to stock
         }
 
+         const { cost: unitCost } = calculateUnitCost(product); // Calculate unit cost
 
-        const profit = calculateProfit(saleData.saleValue, product.acquisitionValue, saleData.quantitySold);
+         // Calculate profit based on unit cost
+         const profit = saleData.isLoss
+             ? -(unitCost * saleData.quantitySold) // If loss, profit is negative unit cost * quantity
+             : saleData.saleValue - (unitCost * saleData.quantitySold); // Profit = Sale Value - Cost of Goods Sold
+
         const newSale: Sale = {
           ...saleData,
           id: uuidv4(),
           productName: product.name,
-          profit: saleData.isLoss ? -(product.acquisitionValue * saleData.quantitySold) : profit, // If loss, profit is negative acquisition cost
+          profit: profit, // Use the calculated profit
           createdAt: new Date().toISOString(),
         };
 
-        // Update product quantity
-        const updatedProducts = get().products.map((p) =>
-            p.id === saleData.productId
-            ? { ...p, quantity: p.quantity - saleData.quantitySold }
-            : p
-        );
+         // Update product's current quantity
+         const updatedProducts = get().products.map(p =>
+             p.id === saleData.productId
+                 ? { ...p, quantity: p.quantity - saleData.quantitySold } // Update current quantity
+                 : p
+         );
 
 
         set((state) => ({
             sales: [...state.sales, newSale],
             products: updatedProducts,
          }));
-          // Attempt background sync after change
          get().syncData().catch(err => console.warn("Background sync failed:", err));
          return newSale;
       },
@@ -187,11 +201,11 @@ export const useStore = create<AppState>()(
          const saleToDelete = get().sales.find(s => s.id === saleId);
          if (!saleToDelete) return;
 
-         // Restore product quantity when deleting a sale/loss record
+         // Restore product's current quantity when deleting a sale/loss record
          const updatedProducts = get().products.map(p =>
-            p.id === saleToDelete.productId
-                ? { ...p, quantity: p.quantity + saleToDelete.quantitySold }
-                : p
+             p.id === saleToDelete.productId
+                 ? { ...p, quantity: p.quantity + saleToDelete.quantitySold } // Adjust current quantity back
+                 : p
          );
 
 
@@ -199,12 +213,12 @@ export const useStore = create<AppState>()(
           sales: state.sales.filter((s) => s.id !== saleId),
            products: updatedProducts,
         }));
-         // Attempt background sync after change
-        get().syncData().catch(err => console.warn("Background sync failed:", err));
+         get().syncData().catch(err => console.warn("Background sync failed:", err));
       },
 
        getSalesReportData: () => {
            const { products, sales } = get();
+           // The calculateReports function now uses the updated logic internally
            return calculateReports(products, sales);
        },
 
@@ -217,21 +231,15 @@ export const useStore = create<AppState>()(
         syncData: async () => {
             if (!get().isOnline) {
                 console.log("Offline. Sync skipped.");
-                // Consider queueing sync or notifying user
                 return;
             }
             console.log("Simulating data synchronization...");
-            // In a real app, replace this with actual backend/cloud API calls
-            // to upload/download data. Include versioning/timestamp checks.
              try {
                  await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate network delay
-
-                 // Simulate successful sync
                  console.log("Synchronization simulation complete.");
                  set({ lastSync: new Date() });
              } catch (error) {
                  console.error("Synchronization simulation failed:", error);
-                 // Optionally, update UI to indicate sync failure
              }
         },
 
@@ -250,23 +258,11 @@ export const useStore = create<AppState>()(
             if (error) {
                 console.error("Failed to rehydrate state from storage:", error);
             } else if (state) {
-                 // Ensure currency is set, default if not found in storage
                  if (!state.currency) {
                     state.currency = DEFAULT_CURRENCY_CODE;
                  }
-                // Check online status on load and maybe trigger sync
                 const isOnlineNow = typeof navigator !== 'undefined' ? navigator.onLine : true;
                 state.setIsOnline(isOnlineNow);
-                // Optional: Auto-sync on load if online and maybe if sync is old
-                 // if (isOnlineNow) {
-                 //     // Check if lastSync is too old or null
-                 //     const syncThreshold = 1000 * 60 * 60; // e.g., 1 hour
-                 //     const shouldSync = !state.lastSync || (new Date().getTime() - new Date(state.lastSync).getTime() > syncThreshold);
-                 //     if (shouldSync) {
-                 //        console.log("Triggering sync on rehydration.");
-                 //        state.syncData().catch(err => console.warn("Sync on rehydration failed:", err));
-                 //     }
-                 // }
                 console.log("Hydration finished. Current currency:", state.currency);
             }
         }
@@ -282,7 +278,6 @@ if (typeof window !== 'undefined') {
         storeState.setIsOnline(currentlyOnline);
          if (currentlyOnline) {
             console.log("Became online. Attempting background sync...");
-             // Attempt sync when coming back online
              storeState.syncData().catch(err => console.warn("Background sync failed:", err));
          } else {
              console.log("Became offline.");
@@ -291,9 +286,6 @@ if (typeof window !== 'undefined') {
 
     window.addEventListener('online', updateOnlineStatus);
     window.addEventListener('offline', updateOnlineStatus);
-
-     // Set initial online status correctly after hydration
-     // useStore.setState({ isOnline: navigator.onLine });
 }
 
 // Export UUID generator if needed elsewhere

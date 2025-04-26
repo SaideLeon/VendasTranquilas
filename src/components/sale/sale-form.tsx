@@ -26,6 +26,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import type { Product, Sale } from "@/types";
+import { calculateUnitCost } from "@/types"; // Import the helper
 import { useStore } from "@/store/store";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ShoppingCart, AlertTriangle } from "lucide-react";
@@ -49,7 +50,7 @@ const formSchema = z.object({
 }).refine(data => {
      // Check stock (for both sales and losses, as the item is removed from inventory)
      const product = useStore.getState().getProductById(data.productId);
-     // Ensure product exists before checking quantity
+     // Check against current quantity (product.quantity)
      return product && product.quantity >= data.quantitySold;
  }, {
     message: "Quantidade em estoque insuficiente.",
@@ -88,15 +89,17 @@ export default function SaleForm({ onSubmit, isLoading = false }: SaleFormProps)
        return products.find(p => p.id === watchProductId);
    }, [watchProductId, products]);
 
-   // Calculate suggested price based on acquisition cost (e.g., 50% markup)
+   const { cost: unitCost } = calculateUnitCost(selectedProduct); // Calculate unit cost
+
+   // Calculate suggested price based on unit cost (e.g., 50% markup)
    const suggestedSalePrice = React.useMemo(() => {
-        if (selectedProduct && watchQuantitySold > 0 && !watchIsLoss) {
-            // Example: Suggest price with 50% markup
-            const totalAcquisitionCost = selectedProduct.acquisitionValue * watchQuantitySold;
-            return totalAcquisitionCost * 1.5; // 50% markup
+        if (unitCost > 0 && watchQuantitySold > 0 && !watchIsLoss) {
+            // Example: Suggest price with 50% markup on unit cost
+            const totalUnitCost = unitCost * watchQuantitySold;
+            return totalUnitCost * 1.5; // 50% markup
         }
         return 0;
-   }, [selectedProduct, watchQuantitySold, watchIsLoss]);
+   }, [unitCost, watchQuantitySold, watchIsLoss]);
 
    // Update saleValue when suggested price changes, but only if user hasn't manually set it
    React.useEffect(() => {
@@ -112,13 +115,13 @@ export default function SaleForm({ onSubmit, isLoading = false }: SaleFormProps)
        if (watchIsLoss) {
             form.setValue("saleValue", 0, { shouldDirty: true, shouldValidate: true }); // Mark as dirty to prevent suggested price override later
         } else if (currentSaleValue === 0 && !isSaleValueDirty) {
-             // If switching back from loss, value is 0, and not manually set, recalculate
-             const newSuggested = selectedProduct ? (selectedProduct.acquisitionValue * watchQuantitySold) * 1.5 : 0;
+             // If switching back from loss, value is 0, and not manually set, recalculate based on unit cost
+             const newSuggested = unitCost > 0 ? (unitCost * watchQuantitySold) * 1.5 : 0;
              if (newSuggested > 0) {
                  form.setValue("saleValue", parseFloat(newSuggested.toFixed(2)), { shouldValidate: true });
              }
         }
-   }, [suggestedSalePrice, form, watchIsLoss, selectedProduct, watchQuantitySold]);
+   }, [suggestedSalePrice, form, watchIsLoss, unitCost, watchQuantitySold]); // Depend on unitCost now
 
 
   const handleFormSubmit = async (values: SaleFormData) => {
@@ -130,8 +133,9 @@ export default function SaleForm({ onSubmit, isLoading = false }: SaleFormProps)
     }
   };
 
-   // Products available for selection (allow OOS only if loss)
-   const availableProducts = products.filter(p => watchIsLoss || p.quantity > 0);
+   // Products available for selection (always check current quantity > 0, unless it's a loss)
+   // Allow selecting OOS for loss registration, but maybe disable submit button? (Handled by Zod refine now)
+   const availableProducts = products; //.filter(p => watchIsLoss || p.quantity > 0);
    const hasAvailableProducts = availableProducts.length > 0;
 
 
@@ -159,7 +163,7 @@ export default function SaleForm({ onSubmit, isLoading = false }: SaleFormProps)
                     >
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder={hasAvailableProducts ? "Selecione um produto" : "Nenhum produto disponível"} />
+                        <SelectValue placeholder={hasAvailableProducts ? "Selecione um produto" : "Nenhum produto cadastrado"} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -167,12 +171,10 @@ export default function SaleForm({ onSubmit, isLoading = false }: SaleFormProps)
                         <SelectItem
                             key={product.id}
                             value={product.id}
-                            // Disable if not loss and out of stock
-                            disabled={!watchIsLoss && product.quantity <= 0}
                          >
                           {product.name} ({product.quantity} em estoque)
                         </SelectItem>
-                      )) : <SelectItem value="no-products" disabled>Nenhum produto disponível</SelectItem> }
+                      )) : <SelectItem value="no-products" disabled>Nenhum produto cadastrado</SelectItem> }
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -180,11 +182,7 @@ export default function SaleForm({ onSubmit, isLoading = false }: SaleFormProps)
               )}
             />
 
-             {selectedProduct && (selectedProduct.quantity < watchQuantitySold) && (
-                <FormDescription className="text-destructive flex items-center gap-1">
-                    <AlertTriangle className="h-4 w-4" /> Estoque insuficiente ({selectedProduct.quantity} disponível). A quantidade será registrada como negativa se prosseguir.
-                </FormDescription>
-             )}
+             {/* Display stock error from Zod validation */}
 
 
             <FormField
@@ -196,7 +194,7 @@ export default function SaleForm({ onSubmit, isLoading = false }: SaleFormProps)
                   <FormControl>
                     <Input type="number" step="1" min="1" placeholder="Ex: 1" {...field} disabled={isLoading}/>
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage /> {/* Zod validation message will appear here */}
                 </FormItem>
               )}
             />
@@ -219,14 +217,14 @@ export default function SaleForm({ onSubmit, isLoading = false }: SaleFormProps)
                       readOnly={watchIsLoss}
                      />
                   </FormControl>
-                   {suggestedSalePrice > 0 && !watchIsLoss && (
+                   {suggestedSalePrice > 0 && !watchIsLoss && selectedProduct && (
                      <FormDescription>
-                        Preço sugerido: {formatCurrency(suggestedSalePrice, currency)}
+                        Preço sugerido (50% margem sobre custo unitário): {formatCurrency(suggestedSalePrice, currency)}
                      </FormDescription>
                    )}
-                   {watchIsLoss && (
+                   {watchIsLoss && selectedProduct && (
                        <FormDescription>
-                            O valor da venda é 0 para perdas. O custo do produto ({formatCurrency(selectedProduct?.acquisitionValue, currency)} por unidade) será registrado como prejuízo.
+                            O valor da venda é 0 para perdas. O custo unitário do produto ({formatCurrency(unitCost, currency)}) será registrado como prejuízo por unidade perdida.
                        </FormDescription>
                    )}
                   <FormMessage />
@@ -273,7 +271,7 @@ export default function SaleForm({ onSubmit, isLoading = false }: SaleFormProps)
                         disabled={isLoading}
                          />
                     </FormControl>
-                    <FormMessage />
+                    <FormMessage /> {/* Zod validation message will appear here */}
                   </FormItem>
                 )}
               />
@@ -281,7 +279,7 @@ export default function SaleForm({ onSubmit, isLoading = false }: SaleFormProps)
 
             <Button
                 type="submit"
-                disabled={isLoading || !hasAvailableProducts || (selectedProduct && selectedProduct.quantity < watchQuantitySold)}
+                disabled={isLoading || !hasAvailableProducts || !form.formState.isValid} // Disable if form is invalid (e.g., stock issue)
                 className="w-full bg-accent hover:bg-accent/90"
                 >
                {isLoading ? "Registrando..." : (watchIsLoss ? "Registrar Perda" : "Registrar Venda")}
