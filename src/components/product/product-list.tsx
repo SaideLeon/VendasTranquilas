@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Edit, Trash2, Search, PackageX, Package, HelpCircle } from "lucide-react"; // Added HelpCircle
+import { Edit, Trash2, Search, PackageX, Package, HelpCircle, Eye } from "lucide-react"; // Added Eye icon
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import {
@@ -29,24 +29,25 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { ScrollArea, ScrollBar } from '../ui/scroll-area'; // Import ScrollBar
-import { useStore } from '@/store/store'; // Import useStore
-import { formatCurrency } from '@/lib/currency-utils'; // Import the utility
+import { ScrollArea, ScrollBar } from '../ui/scroll-area';
+import { useStore } from '@/store/store';
+import { formatCurrency } from '@/lib/currency-utils';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/components/ui/tooltip"; // Import Tooltip components
+} from "@/components/ui/tooltip";
 
 
 interface ProductListProps {
   products: Product[];
   onEdit: (product: Product) => void;
   onDelete: (productId: string) => void;
+  onViewDetails: (product: Product) => void; // Added prop for viewing details
 }
 
-export default function ProductList({ products, onEdit, onDelete }: ProductListProps) {
+export default function ProductList({ products, onEdit, onDelete, onViewDetails }: ProductListProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
   const { currency } = useStore(); // Get current currency
@@ -108,13 +109,12 @@ export default function ProductList({ products, onEdit, onDelete }: ProductListP
              </CardTitle>
          </CardHeader>
           <CardContent>
-            {/* Wrap the Table with ScrollArea and add ScrollBar for horizontal scrolling */}
              <ScrollArea className="w-full whitespace-nowrap rounded-md border">
-                <TooltipProvider> {/* Wrap table in TooltipProvider */}
-                    <Table className="min-w-max">{/* Ensure table takes at least its minimum width */}
-                        <TableHeader>{/* No longer sticky to allow horizontal scrolling */}
+                <TooltipProvider>
+                    <Table className="min-w-max">
+                        <TableHeader>
                             <TableRow>
-                            <TableHead className="sticky left-0 bg-background z-10 min-w-[150px]">Nome</TableHead>{/* Sticky Name Column */}
+                            <TableHead className="sticky left-0 bg-background z-10 min-w-[150px]">Nome</TableHead>
                             <TableHead className="text-right min-w-[150px]">
                                 <div className="flex items-center justify-end gap-1">
                                     Valor Aquisição
@@ -142,9 +142,9 @@ export default function ProductList({ products, onEdit, onDelete }: ProductListP
                                 </div>
                             </TableHead>
                             <TableHead className="text-right min-w-[100px]">Qtd. Estoque</TableHead>
-                            <TableHead className="text-right min-w-[100px]">Qtd. Inicial</TableHead>{/* Added Initial Quantity */}
+                            <TableHead className="text-right min-w-[100px]">Qtd. Inicial</TableHead>
                             <TableHead className="min-w-[150px]">Cadastrado em</TableHead>
-                            <TableHead className="sticky right-0 bg-background z-10 text-right min-w-[100px]">Ações</TableHead>{/* Sticky Actions Column */}
+                            <TableHead className="sticky right-0 bg-background z-10 text-right min-w-[140px]">Ações</TableHead> {/* Increased min-width for actions */}
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -153,10 +153,8 @@ export default function ProductList({ products, onEdit, onDelete }: ProductListP
                                 const { cost: unitCost, error: unitCostError } = calculateUnitCost(product);
                                 return (
                                 <TableRow key={product.id}>
-                                    <TableCell className="sticky left-0 bg-background z-10 font-medium">{product.name}</TableCell>{/* Sticky Name Cell */}
-                                    {/* Show total acquisition value */}
+                                    <TableCell className="sticky left-0 bg-background z-10 font-medium">{product.name}</TableCell>
                                     <TableCell className="text-right">{formatValue(product.acquisitionValue)}</TableCell>
-                                    {/* Show calculated unit cost */}
                                     <TableCell className="text-right">
                                     {unitCostError ? (
                                         <Tooltip>
@@ -171,12 +169,13 @@ export default function ProductList({ products, onEdit, onDelete }: ProductListP
                                         formatValue(unitCost)
                                     )}
                                     </TableCell>
-                                    {/* Show current quantity */}
                                     <TableCell className="text-right">{product.quantity}</TableCell>
-                                     {/* Show initial quantity */}
                                      <TableCell className="text-right">{product.initialQuantity ?? 'N/A'}</TableCell>
                                     <TableCell>{formatDate(product.createdAt)}</TableCell>
-                                    <TableCell className="sticky right-0 bg-background z-10 text-right space-x-2">{/* Sticky Actions Cell */}
+                                    <TableCell className="sticky right-0 bg-background z-10 text-right space-x-2">
+                                        <Button variant="outline" size="icon" onClick={() => onViewDetails(product)} aria-label={`Visualizar detalhes de ${product.name}`}>
+                                            <Eye className="h-4 w-4" />
+                                        </Button>
                                         <Button variant="outline" size="icon" onClick={() => onEdit(product)} aria-label={`Editar ${product.name}`}>
                                         <Edit className="h-4 w-4" />
                                         </Button>
@@ -206,7 +205,7 @@ export default function ProductList({ products, onEdit, onDelete }: ProductListP
                                 })
                             ) : (
                             <TableRow>
-                                <TableCell colSpan={7} className="text-center h-24">{/* Increased colSpan to match new column count */}
+                                <TableCell colSpan={7} className="text-center h-24"> {/* Increased colSpan */}
                                     <div className="flex flex-col items-center justify-center gap-2">
                                         <PackageX className="h-8 w-8 text-muted-foreground"/>
                                         <p className="text-muted-foreground">
@@ -217,9 +216,9 @@ export default function ProductList({ products, onEdit, onDelete }: ProductListP
                             </TableRow>
                             )}
                         </TableBody>
-                    </Table>{/* Ensure no whitespace around Table or its children */}
-                </TooltipProvider>{/* Close TooltipProvider */}
-                 <ScrollBar orientation="horizontal" />{/* Add horizontal scrollbar */}
+                    </Table>
+                </TooltipProvider>
+                 <ScrollBar orientation="horizontal" />
             </ScrollArea>
          </CardContent>
     </Card>
