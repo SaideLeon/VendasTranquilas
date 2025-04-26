@@ -111,10 +111,10 @@ export default function ProductList({ products, onEdit, onDelete }: ProductListP
             {/* Wrap the Table with ScrollArea and add ScrollBar for horizontal scrolling */}
              <ScrollArea className="w-full whitespace-nowrap rounded-md border">
                 <TooltipProvider> {/* Wrap table in TooltipProvider */}
-                    <Table className="min-w-max"> {/* Ensure table takes at least its minimum width */}
-                        <TableHeader> {/* No longer sticky to allow horizontal scrolling */}
+                    <Table className="min-w-max">{/* Ensure table takes at least its minimum width */}
+                        <TableHeader>{/* No longer sticky to allow horizontal scrolling */}
                             <TableRow>
-                            <TableHead className="sticky left-0 bg-background z-10 min-w-[150px]">Nome</TableHead> {/* Sticky Name Column */}
+                            <TableHead className="sticky left-0 bg-background z-10 min-w-[150px]">Nome</TableHead>{/* Sticky Name Column */}
                             <TableHead className="text-right min-w-[150px]">
                                 <div className="flex items-center justify-end gap-1">
                                     Valor Aquisição
@@ -142,9 +142,9 @@ export default function ProductList({ products, onEdit, onDelete }: ProductListP
                                 </div>
                             </TableHead>
                             <TableHead className="text-right min-w-[100px]">Qtd. Estoque</TableHead>
-                            <TableHead className="text-right min-w-[100px]">Qtd. Inicial</TableHead> {/* Added Initial Quantity */}
+                            <TableHead className="text-right min-w-[100px]">Qtd. Inicial</TableHead>{/* Added Initial Quantity */}
                             <TableHead className="min-w-[150px]">Cadastrado em</TableHead>
-                            <TableHead className="sticky right-0 bg-background z-10 text-right min-w-[100px]">Ações</TableHead> {/* Sticky Actions Column */}
+                            <TableHead className="sticky right-0 bg-background z-10 text-right min-w-[100px]">Ações</TableHead>{/* Sticky Actions Column */}
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -153,7 +153,7 @@ export default function ProductList({ products, onEdit, onDelete }: ProductListP
                                 const { cost: unitCost, error: unitCostError } = calculateUnitCost(product);
                                 return (
                                 <TableRow key={product.id}>
-                                    <TableCell className="sticky left-0 bg-background z-10 font-medium">{product.name}</TableCell> {/* Sticky Name Cell */}
+                                    <TableCell className="sticky left-0 bg-background z-10 font-medium">{product.name}</TableCell>{/* Sticky Name Cell */}
                                     {/* Show total acquisition value */}
                                     <TableCell className="text-right">{formatValue(product.acquisitionValue)}</TableCell>
                                     {/* Show calculated unit cost */}
@@ -176,7 +176,7 @@ export default function ProductList({ products, onEdit, onDelete }: ProductListP
                                      {/* Show initial quantity */}
                                      <TableCell className="text-right">{product.initialQuantity ?? 'N/A'}</TableCell>
                                     <TableCell>{formatDate(product.createdAt)}</TableCell>
-                                    <TableCell className="sticky right-0 bg-background z-10 text-right space-x-2"> {/* Sticky Actions Cell */}
+                                    <TableCell className="sticky right-0 bg-background z-10 text-right space-x-2">{/* Sticky Actions Cell */}
                                         <Button variant="outline" size="icon" onClick={() => onEdit(product)} aria-label={`Editar ${product.name}`}>
                                         <Edit className="h-4 w-4" />
                                         </Button>
@@ -206,7 +206,7 @@ export default function ProductList({ products, onEdit, onDelete }: ProductListP
                                 })
                             ) : (
                             <TableRow>
-                                <TableCell colSpan={7} className="text-center h-24"> {/* Increased colSpan to match new column count */}
+                                <TableCell colSpan={7} className="text-center h-24">{/* Increased colSpan to match new column count */}
                                     <div className="flex flex-col items-center justify-center gap-2">
                                         <PackageX className="h-8 w-8 text-muted-foreground"/>
                                         <p className="text-muted-foreground">
@@ -217,9 +217,9 @@ export default function ProductList({ products, onEdit, onDelete }: ProductListP
                             </TableRow>
                             )}
                         </TableBody>
-                    </Table>
-                </TooltipProvider> {/* Close TooltipProvider */}
-                 <ScrollBar orientation="horizontal" /> {/* Add horizontal scrollbar */}
+                    </Table>{/* Ensure no whitespace around Table or its children */}
+                </TooltipProvider>{/* Close TooltipProvider */}
+                 <ScrollBar orientation="horizontal" />{/* Add horizontal scrollbar */}
             </ScrollArea>
          </CardContent>
     </Card>

@@ -5,9 +5,12 @@ import { cn } from "@/lib/utils"
 const Table = React.forwardRef<
   HTMLTableElement,
   React.HTMLAttributes<HTMLTableElement>
->(({ className, ...props }, ref) => (<table  ref={ref}  className={cn("w-full caption-bottom text-sm min-w-max",  className  )}
+>(({ className, ...props }, ref) => (
+  <table // Ensure no whitespace before/after this tag or its children
+    ref={ref}
+    className={cn("w-full caption-bottom text-sm min-w-max", className)}
     {...props}
-  /> // Removed whitespace from here
+  />
 ))
 Table.displayName = "Table"
 
@@ -15,7 +18,7 @@ const TableHeader = React.forwardRef<
   HTMLTableSectionElement,
   React.HTMLAttributes<HTMLTableSectionElement>
 >(({ className, ...props }, ref) => (
-  <thead
+  <thead // Ensure no whitespace before/after this tag or its children
     ref={ref}
     className={cn("[&_tr]:border-b", className)}
     {...props}
@@ -27,7 +30,7 @@ const TableBody = React.forwardRef<
   HTMLTableSectionElement,
   React.HTMLAttributes<HTMLTableSectionElement>
 >(({ className, ...props }, ref) => (
-  <tbody
+  <tbody // Ensure no whitespace before/after this tag or its children
     ref={ref}
     className={cn("[&_tr:last-child]:border-0", className)}
     {...props}
@@ -39,7 +42,7 @@ const TableFooter = React.forwardRef<
   HTMLTableSectionElement,
   React.HTMLAttributes<HTMLTableSectionElement>
 >(({ className, ...props }, ref) => (
-  <tfoot
+  <tfoot // Ensure no whitespace before/after this tag or its children
     ref={ref}
     className={cn(
       "border-t bg-muted/50 font-medium [&>tr]:last:border-b-0",
@@ -54,7 +57,7 @@ const TableRow = React.forwardRef<
   HTMLTableRowElement,
   React.HTMLAttributes<HTMLTableRowElement>
 >(({ className, ...props }, ref) => (
-  <tr
+  <tr // Ensure no whitespace before/after this tag or its children
     ref={ref}
     className={cn(
       "border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted",
@@ -69,7 +72,7 @@ const TableHead = React.forwardRef<
   HTMLTableCellElement,
   React.ThHTMLAttributes<HTMLTableCellElement>
 >(({ className, ...props }, ref) => (
-  <th
+  <th // Ensure no whitespace before/after this tag or its children
     ref={ref}
     className={cn(
       "h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0",
@@ -84,7 +87,7 @@ const TableCell = React.forwardRef<
   HTMLTableCellElement,
   React.TdHTMLAttributes<HTMLTableCellElement>
 >(({ className, ...props }, ref) => (
-  <td
+  <td // Ensure no whitespace before/after this tag or its children
     ref={ref}
     className={cn("p-4 align-middle [&:has([role=checkbox])]:pr-0", className)}
     {...props}
@@ -96,7 +99,7 @@ const TableCaption = React.forwardRef<
   HTMLTableCaptionElement,
   React.HTMLAttributes<HTMLTableCaptionElement>
 >(({ className, ...props }, ref) => (
-  <caption
+  <caption // Ensure no whitespace before/after this tag or its children
     ref={ref}
     className={cn("mt-4 text-sm text-muted-foreground", className)}
     {...props}
