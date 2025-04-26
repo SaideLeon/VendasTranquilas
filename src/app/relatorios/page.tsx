@@ -49,14 +49,14 @@ export default function RelatoriosPage() {
         />
          <ReportCard
           title="Investimento Total (Estoque)"
-          value={formatValue(reportData.totalInvestment)} {/* Use formatValue */}
+          value={formatValue(reportData.totalInvestment)} 
           icon={DollarSign}
           description="Custo total de aquisição dos produtos em estoque."
           colorClass="text-amber-600"
         />
         <ReportCard
           title="Faturamento Total"
-          value={formatValue(reportData.totalRevenue)} {/* Use formatValue */}
+          value={formatValue(reportData.totalRevenue)} 
           icon={DollarSign}
           description="Soma de todos os valores de venda (exclui perdas)."
           colorClass="text-cyan-600"
@@ -67,14 +67,14 @@ export default function RelatoriosPage() {
        <div className="grid gap-4 md:grid-cols-2">
             <ReportCard
                 title="Lucro Líquido Total"
-                value={formatValue(reportData.totalProfit)} {/* Use formatValue */}
+                value={formatValue(reportData.totalProfit)}
                 icon={TrendingUp}
                 description="Faturamento - Custo das Vendas - Prejuízos."
                 colorClass={reportData.totalProfit >= 0 ? "text-green-600" : "text-red-600"}
                 />
              <ReportCard
                 title="Prejuízos Totais (Perdas)"
-                value={formatValue(reportData.totalLossValue)} {/* Use formatValue */}
+                value={formatValue(reportData.totalLossValue)} 
                 icon={TrendingDown}
                 description="Custo total dos produtos registrados como perda."
                 colorClass={reportData.totalLossValue > 0 ? "text-red-600" : "text-gray-500"}
