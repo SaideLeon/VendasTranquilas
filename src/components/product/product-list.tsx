@@ -114,37 +114,37 @@ export default function ProductList({ products, onEdit, onDelete, onViewDetails 
                     <Table className="min-w-max">
                         <TableHeader>
                             <TableRow>
-                            <TableHead className="sticky left-0 bg-background z-10 min-w-[150px]">Nome</TableHead>
-                            <TableHead className="text-right min-w-[150px]">
-                                <div className="flex items-center justify-end gap-1">
-                                    Valor Aquisição
-                                    <Tooltip>
-                                        <TooltipTrigger asChild>
-                                            <HelpCircle className="h-3 w-3 text-muted-foreground cursor-help" />
-                                        </TooltipTrigger>
-                                        <TooltipContent>
-                                            <p>Valor total pago pela quantidade inicial.</p>
-                                        </TooltipContent>
-                                    </Tooltip>
-                                </div>
-                            </TableHead>
-                            <TableHead className="text-right min-w-[150px]">
-                                <div className="flex items-center justify-end gap-1">
-                                    Valor Unitário
-                                    <Tooltip>
-                                        <TooltipTrigger asChild>
-                                            <HelpCircle className="h-3 w-3 text-muted-foreground cursor-help" />
-                                        </TooltipTrigger>
-                                        <TooltipContent>
-                                            <p>Custo calculado por unidade (Valor Aquisição / Qtd. Inicial).</p>
-                                        </TooltipContent>
-                                    </Tooltip>
-                                </div>
-                            </TableHead>
-                            <TableHead className="text-right min-w-[100px]">Qtd. Estoque</TableHead>
-                            <TableHead className="text-right min-w-[100px]">Qtd. Inicial</TableHead>
-                            <TableHead className="min-w-[150px]">Cadastrado em</TableHead>
-                            <TableHead className="sticky right-0 bg-background z-10 text-right min-w-[140px]">Ações</TableHead> {/* Increased min-width for actions */}
+                                <TableHead className="sticky left-0 bg-background z-10 min-w-[150px]">Nome</TableHead>
+                                <TableHead className="text-right min-w-[150px]">
+                                    <div className="flex items-center justify-end gap-1">
+                                        Valor Aquisição
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <HelpCircle className="h-3 w-3 text-muted-foreground cursor-help" />
+                                            </TooltipTrigger>
+                                            <TooltipContent>
+                                                <p>Valor total pago pela quantidade inicial.</p>
+                                            </TooltipContent>
+                                        </Tooltip>
+                                    </div>
+                                </TableHead>
+                                <TableHead className="text-right min-w-[150px]">
+                                    <div className="flex items-center justify-end gap-1">
+                                        Valor Unitário
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <HelpCircle className="h-3 w-3 text-muted-foreground cursor-help" />
+                                            </TooltipTrigger>
+                                            <TooltipContent>
+                                                <p>Custo calculado por unidade (Valor Aquisição / Qtd. Inicial).</p>
+                                            </TooltipContent>
+                                        </Tooltip>
+                                    </div>
+                                </TableHead>
+                                <TableHead className="text-right min-w-[100px]">Qtd. Estoque</TableHead>
+                                <TableHead className="text-right min-w-[100px]">Qtd. Inicial</TableHead>
+                                <TableHead className="min-w-[150px]">Cadastrado em</TableHead>
+                                <TableHead className="sticky right-0 bg-background z-10 text-right min-w-[140px]">Ações</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -198,14 +198,13 @@ export default function ProductList({ products, onEdit, onDelete, onViewDetails 
                                                 </AlertDialogFooter>
                                             </AlertDialogContent>
                                         </AlertDialog>
-
                                     </TableCell>
                                 </TableRow>
                                 );
                                 })
                             ) : (
                             <TableRow>
-                                <TableCell colSpan={7} className="text-center h-24"> {/* Increased colSpan */}
+                                <TableCell colSpan={7} className="text-center h-24">
                                     <div className="flex flex-col items-center justify-center gap-2">
                                         <PackageX className="h-8 w-8 text-muted-foreground"/>
                                         <p className="text-muted-foreground">
