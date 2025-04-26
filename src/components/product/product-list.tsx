@@ -1,3 +1,4 @@
+// src/components/product/product-list.tsx
 "use client";
 
 import React, { useState, useMemo } from 'react';
@@ -28,6 +29,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { ScrollArea } from '../ui/scroll-area';
+import { useStore } from '@/store/store'; // Import useStore
+import { formatCurrency } from '@/lib/currency-utils'; // Import the utility
 
 interface ProductListProps {
   products: Product[];
@@ -38,6 +41,7 @@ interface ProductListProps {
 export default function ProductList({ products, onEdit, onDelete }: ProductListProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
+  const { currency } = useStore(); // Get current currency
 
   const filteredProducts = useMemo(() => {
     if (!searchTerm) return products;
@@ -46,8 +50,9 @@ export default function ProductList({ products, onEdit, onDelete }: ProductListP
     );
   }, [products, searchTerm]);
 
-  const formatCurrency = (value: number) => {
-    return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  // Use the utility function, passing the current currency
+  const formatValue = (value: number) => {
+    return formatCurrency(value, currency);
   };
 
   const formatDate = (dateString: string) => {
@@ -107,7 +112,8 @@ export default function ProductList({ products, onEdit, onDelete }: ProductListP
                     filteredProducts.map((product) => (
                         <TableRow key={product.id}>
                         <TableCell className="font-medium">{product.name}</TableCell>
-                        <TableCell className="text-right">{formatCurrency(product.acquisitionValue)}</TableCell>
+                        {/* Use the updated formatValue function */}
+                        <TableCell className="text-right">{formatValue(product.acquisitionValue)}</TableCell>
                         <TableCell className="text-right">{product.quantity}</TableCell>
                          <TableCell className="hidden md:table-cell">{formatDate(product.createdAt)}</TableCell>
                         <TableCell className="text-right space-x-2">

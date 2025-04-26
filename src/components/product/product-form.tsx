@@ -1,6 +1,7 @@
+// src/components/product/product-form.tsx
 "use client";
 
-import React from "react"; // Import React
+import React from "react"; // Added React import
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -17,6 +18,8 @@ import { Input } from "@/components/ui/input";
 import type { Product } from "@/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PackagePlus, Save } from "lucide-react";
+import { useStore } from "@/store/store"; // Import useStore
+import { getCurrencyConfig } from "@/config/currencies"; // Import currency config
 
 const formSchema = z.object({
   name: z.string().min(2, {
@@ -39,6 +42,10 @@ interface ProductFormProps {
 }
 
 export default function ProductForm({ onSubmit, initialData, isLoading = false }: ProductFormProps) {
+  const { currency } = useStore(); // Get current currency from store
+  const currencyConfig = getCurrencyConfig(currency);
+  const currencySymbol = currencyConfig?.symbol || currency; // Fallback to code if symbol not found
+
   const form = useForm<ProductFormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -99,7 +106,8 @@ export default function ProductForm({ onSubmit, initialData, isLoading = false }
               name="acquisitionValue"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Valor de Aquisição (R$)</FormLabel>
+                  {/* Update label to include currency symbol */}
+                  <FormLabel>Valor de Aquisição ({currencySymbol})</FormLabel>
                   <FormControl>
                     <Input type="number" step="0.01" placeholder="Ex: 15.50" {...field} disabled={isLoading}/>
                   </FormControl>

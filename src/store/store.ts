@@ -2,20 +2,23 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import type { Product, Sale, ReportData } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
+import { DEFAULT_CURRENCY_CODE } from '@/config/currencies';
 
 interface AppState {
   products: Product[];
   sales: Sale[];
   lastSync: Date | null;
   isOnline: boolean;
+  currency: string; // ISO 4217 currency code (e.g., 'BRL', 'USD')
   setIsOnline: (status: boolean) => void;
+  setCurrency: (currencyCode: string) => void;
   addProduct: (productData: Omit<Product, 'id' | 'createdAt'>) => Product;
   updateProduct: (product: Product) => void;
   deleteProduct: (productId: string) => void;
   getProductById: (productId: string) => Product | undefined;
   addSale: (saleData: Omit<Sale, 'id' | 'profit' | 'productName' | 'createdAt'>) => Sale | null;
   deleteSale: (saleId: string) => void;
-  getSalesReportData: () => ReportData;
+  getSalesReportData: () => ReportData; // Report data structure might not need currency itself, but relies on values assumed to be in the selected currency
   setProducts: (products: Product[]) => void;
   setSales: (sales: Sale[]) => void;
   setLastSync: (date: Date | null) => void;
@@ -24,11 +27,13 @@ interface AppState {
 }
 
 // Helper function to calculate profit
+// The calculation logic remains the same, regardless of currency.
 const calculateProfit = (saleValue: number, acquisitionValue: number, quantitySold: number): number => {
     return saleValue - (acquisitionValue * quantitySold);
 };
 
 // Helper function to calculate reports
+// Values are assumed to be in the globally selected currency.
 const calculateReports = (products: Product[], sales: Sale[]): ReportData => {
     let totalInvestment = 0;
     products.forEach(p => totalInvestment += p.acquisitionValue * p.quantity);
@@ -63,15 +68,13 @@ const calculateReports = (products: Product[], sales: Sale[]): ReportData => {
     let highestLossProduct: { name: string; lossValue: number } | null = null;
 
     Object.values(productProfits).forEach(data => {
-        if (!mostProfitableProduct || data.profit > mostProfitableProduct.profit) {
-            if (data.profit > 0) { // Only consider profitable products
-              mostProfitableProduct = { name: data.name, profit: data.profit };
-            }
+        // Find most profitable (must have positive profit)
+        if (data.profit > 0 && (!mostProfitableProduct || data.profit > mostProfitableProduct.profit)) {
+            mostProfitableProduct = { name: data.name, profit: data.profit };
         }
-         if (!highestLossProduct || data.lossValue > highestLossProduct.lossValue) {
-            if(data.lossValue > 0) { // Only consider products with losses
+         // Find highest loss (must have positive loss value)
+         if (data.lossValue > 0 && (!highestLossProduct || data.lossValue > highestLossProduct.lossValue)) {
              highestLossProduct = { name: data.name, lossValue: data.lossValue };
-            }
         }
     });
 
@@ -95,8 +98,10 @@ export const useStore = create<AppState>()(
       sales: [],
       lastSync: null,
       isOnline: typeof navigator !== 'undefined' ? navigator.onLine : true, // Initial online status
+      currency: DEFAULT_CURRENCY_CODE, // Initialize with default currency
 
        setIsOnline: (status) => set({ isOnline: status }),
+       setCurrency: (currencyCode) => set({ currency: currencyCode }),
 
       addProduct: (productData) => {
         const newProduct: Product = {
@@ -105,6 +110,8 @@ export const useStore = create<AppState>()(
           createdAt: new Date().toISOString(),
         };
         set((state) => ({ products: [...state.products, newProduct] }));
+        // Attempt background sync after change
+        get().syncData().catch(err => console.warn("Background sync failed:", err));
         return newProduct;
       },
 
@@ -114,6 +121,8 @@ export const useStore = create<AppState>()(
             p.id === updatedProduct.id ? updatedProduct : p
           ),
         }));
+         // Attempt background sync after change
+        get().syncData().catch(err => console.warn("Background sync failed:", err));
       },
 
        deleteProduct: (productId) => {
@@ -125,6 +134,8 @@ export const useStore = create<AppState>()(
           products: state.products.filter((p) => p.id !== productId),
           sales: state.sales.filter((s) => s.productId !== productId) // Remove sales related to the deleted product
         }));
+         // Attempt background sync after change
+        get().syncData().catch(err => console.warn("Background sync failed:", err));
       },
 
        getProductById: (productId) => {
@@ -155,28 +166,20 @@ export const useStore = create<AppState>()(
           createdAt: new Date().toISOString(),
         };
 
-        // Update product quantity only if it's not a loss/write-off
-        let updatedProducts = get().products;
-        if (!saleData.isLoss) {
-            updatedProducts = get().products.map((p) =>
-                p.id === saleData.productId
-                ? { ...p, quantity: p.quantity - saleData.quantitySold }
-                : p
-            );
-        } else {
-           // If it IS a loss, decrease quantity anyway because the product is gone
-            updatedProducts = get().products.map((p) =>
-                p.id === saleData.productId
-                ? { ...p, quantity: p.quantity - saleData.quantitySold }
-                : p
-            );
-        }
+        // Update product quantity
+        const updatedProducts = get().products.map((p) =>
+            p.id === saleData.productId
+            ? { ...p, quantity: p.quantity - saleData.quantitySold }
+            : p
+        );
 
 
         set((state) => ({
             sales: [...state.sales, newSale],
             products: updatedProducts,
          }));
+          // Attempt background sync after change
+         get().syncData().catch(err => console.warn("Background sync failed:", err));
          return newSale;
       },
 
@@ -184,28 +187,20 @@ export const useStore = create<AppState>()(
          const saleToDelete = get().sales.find(s => s.id === saleId);
          if (!saleToDelete) return;
 
-         // Restore product quantity if the sale wasn't a loss
-         let updatedProducts = get().products;
-         if (!saleToDelete.isLoss) {
-            updatedProducts = get().products.map(p =>
-                p.id === saleToDelete.productId
-                    ? { ...p, quantity: p.quantity + saleToDelete.quantitySold }
-                    : p
-            );
-         } else {
-              // If it was a loss, restore quantity too, as deleting the loss record means it didn't happen
-             updatedProducts = get().products.map(p =>
-                p.id === saleToDelete.productId
-                    ? { ...p, quantity: p.quantity + saleToDelete.quantitySold }
-                    : p
-            );
-         }
+         // Restore product quantity when deleting a sale/loss record
+         const updatedProducts = get().products.map(p =>
+            p.id === saleToDelete.productId
+                ? { ...p, quantity: p.quantity + saleToDelete.quantitySold }
+                : p
+         );
 
 
         set((state) => ({
           sales: state.sales.filter((s) => s.id !== saleId),
            products: updatedProducts,
         }));
+         // Attempt background sync after change
+        get().syncData().catch(err => console.warn("Background sync failed:", err));
       },
 
        getSalesReportData: () => {
@@ -222,46 +217,59 @@ export const useStore = create<AppState>()(
         syncData: async () => {
             if (!get().isOnline) {
                 console.log("Offline. Sync skipped.");
+                // Consider queueing sync or notifying user
                 return;
             }
-            console.log("Simulating data synchronization with Google Drive...");
-            // In a real app, replace this with actual Google Drive API calls
-            // to upload/download data.
-             await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate network delay
+            console.log("Simulating data synchronization...");
+            // In a real app, replace this with actual backend/cloud API calls
+            // to upload/download data. Include versioning/timestamp checks.
+             try {
+                 await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate network delay
 
-             // Simulate fetching latest data (in reality, you'd compare timestamps/versions)
-             // For this simulation, we assume the local data is the source of truth to upload.
-             const currentProducts = get().products;
-             const currentSales = get().sales;
-
-             console.log("Data to upload:", { products: currentProducts, sales: currentSales });
-
-             // Simulate successful upload
-             console.log("Synchronization simulation complete.");
-             set({ lastSync: new Date() });
+                 // Simulate successful sync
+                 console.log("Synchronization simulation complete.");
+                 set({ lastSync: new Date() });
+             } catch (error) {
+                 console.error("Synchronization simulation failed:", error);
+                 // Optionally, update UI to indicate sync failure
+             }
         },
 
     }),
     {
       name: 'vendas-tranquilas-storage', // name of the item in the storage (must be unique)
       storage: createJSONStorage(() => localStorage), // (optional) by default, 'localStorage' is used
-       // Only persist products and sales. Sync status is transient.
-       partialize: (state) => ({ products: state.products, sales: state.sales, lastSync: state.lastSync }),
-        // Rehydrate hook to potentially merge server data if needed on load
-        // onRehydrateStorage: () => (state, error) => {
-        //     if (error) {
-        //         console.error("Failed to rehydrate state from storage:", error);
-        //     } else if (state) {
-        //         // Check online status on load and maybe trigger sync
-        //         const isOnlineNow = typeof navigator !== 'undefined' ? navigator.onLine : true;
-        //         state.setIsOnline(isOnlineNow);
-        //         if (isOnlineNow) {
-        //             // Optional: Automatically trigger sync on load if online
-        //             // state.syncData();
-        //         }
-        //         console.log("Hydration finished");
-        //     }
-        // }
+       // Persist products, sales, currency, and last sync time.
+       partialize: (state) => ({
+           products: state.products,
+           sales: state.sales,
+           lastSync: state.lastSync,
+           currency: state.currency // Persist the selected currency
+        }),
+        onRehydrateStorage: () => (state, error) => {
+            if (error) {
+                console.error("Failed to rehydrate state from storage:", error);
+            } else if (state) {
+                 // Ensure currency is set, default if not found in storage
+                 if (!state.currency) {
+                    state.currency = DEFAULT_CURRENCY_CODE;
+                 }
+                // Check online status on load and maybe trigger sync
+                const isOnlineNow = typeof navigator !== 'undefined' ? navigator.onLine : true;
+                state.setIsOnline(isOnlineNow);
+                // Optional: Auto-sync on load if online and maybe if sync is old
+                 // if (isOnlineNow) {
+                 //     // Check if lastSync is too old or null
+                 //     const syncThreshold = 1000 * 60 * 60; // e.g., 1 hour
+                 //     const shouldSync = !state.lastSync || (new Date().getTime() - new Date(state.lastSync).getTime() > syncThreshold);
+                 //     if (shouldSync) {
+                 //        console.log("Triggering sync on rehydration.");
+                 //        state.syncData().catch(err => console.warn("Sync on rehydration failed:", err));
+                 //     }
+                 // }
+                console.log("Hydration finished. Current currency:", state.currency);
+            }
+        }
     }
   )
 );
@@ -270,11 +278,12 @@ export const useStore = create<AppState>()(
 if (typeof window !== 'undefined') {
     const updateOnlineStatus = () => {
         const storeState = useStore.getState();
-        storeState.setIsOnline(navigator.onLine);
-         if (navigator.onLine) {
-            console.log("Became online. Attempting to sync...");
+        const currentlyOnline = navigator.onLine;
+        storeState.setIsOnline(currentlyOnline);
+         if (currentlyOnline) {
+            console.log("Became online. Attempting background sync...");
              // Attempt sync when coming back online
-             storeState.syncData();
+             storeState.syncData().catch(err => console.warn("Background sync failed:", err));
          } else {
              console.log("Became offline.");
          }

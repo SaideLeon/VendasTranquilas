@@ -1,5 +1,7 @@
+// src/components/sale/sale-form.tsx
 "use client";
 
+import React from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -27,28 +29,28 @@ import type { Product, Sale } from "@/types";
 import { useStore } from "@/store/store";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ShoppingCart, AlertTriangle } from "lucide-react";
-import React from "react";
+import { getCurrencyConfig } from "@/config/currencies"; // Import currency config
+import { formatCurrency } from "@/lib/currency-utils"; // Import formatting util
+
 
 const formSchema = z.object({
   productId: z.string().min(1, { message: "Selecione um produto." }),
   quantitySold: z.coerce.number().int().positive({
-    message: "A quantidade vendida deve ser um número inteiro positivo.",
+    message: "A quantidade vendida/perdida deve ser um número inteiro positivo.",
   }),
   saleValue: z.coerce.number().nonnegative({ // Allow 0 for losses where no money was received
     message: "O valor da venda deve ser um número não negativo.",
   }),
   isLoss: z.boolean().default(false),
   lossReason: z.string().optional(),
-}).refine(data => !data.isLoss || (data.isLoss && data.lossReason && data.lossReason.length > 0), {
+}).refine(data => !data.isLoss || (data.isLoss && data.lossReason && data.lossReason.trim().length > 0), { // Ensure reason is not just whitespace
     message: "O motivo da perda é obrigatório ao registrar um prejuízo.",
     path: ["lossReason"], // path of error
 }).refine(data => {
-     // Check stock only if it's not a loss
-     if (!data.isLoss) {
-        const product = useStore.getState().getProductById(data.productId);
-        return !product || product.quantity >= data.quantitySold;
-     }
-    return true; // Skip stock check for losses
+     // Check stock (for both sales and losses, as the item is removed from inventory)
+     const product = useStore.getState().getProductById(data.productId);
+     // Ensure product exists before checking quantity
+     return product && product.quantity >= data.quantitySold;
  }, {
     message: "Quantidade em estoque insuficiente.",
     path: ["quantitySold"],
@@ -63,7 +65,10 @@ interface SaleFormProps {
 }
 
 export default function SaleForm({ onSubmit, isLoading = false }: SaleFormProps) {
-  const { products } = useStore();
+  const { products, currency } = useStore(); // Get products and currency
+  const currencyConfig = getCurrencyConfig(currency);
+  const currencySymbol = currencyConfig?.symbol || currency; // Fallback to code
+
   const form = useForm<SaleFormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -95,17 +100,22 @@ export default function SaleForm({ onSubmit, isLoading = false }: SaleFormProps)
 
    // Update saleValue when suggested price changes, but only if user hasn't manually set it
    React.useEffect(() => {
-       if (suggestedSalePrice > 0 && form.getValues("saleValue") === 0 && !form.formState.dirtyFields.saleValue) {
-           form.setValue("saleValue", parseFloat(suggestedSalePrice.toFixed(2)));
+       const currentSaleValue = form.getValues("saleValue");
+       const isSaleValueDirty = form.formState.dirtyFields.saleValue;
+
+       // Set suggested price if applicable and not manually changed
+       if (suggestedSalePrice > 0 && !watchIsLoss && (currentSaleValue === 0 || !isSaleValueDirty)) {
+           form.setValue("saleValue", parseFloat(suggestedSalePrice.toFixed(2)), { shouldValidate: true });
        }
+
         // If switching to loss, reset sale value to 0
-        if (watchIsLoss) {
-            form.setValue("saleValue", 0);
-        } else if (form.getValues("saleValue") === 0 && !form.formState.dirtyFields.saleValue) {
-             // If switching back from loss and value is 0, recalculate suggested price
+       if (watchIsLoss) {
+            form.setValue("saleValue", 0, { shouldDirty: true, shouldValidate: true }); // Mark as dirty to prevent suggested price override later
+        } else if (currentSaleValue === 0 && !isSaleValueDirty) {
+             // If switching back from loss, value is 0, and not manually set, recalculate
              const newSuggested = selectedProduct ? (selectedProduct.acquisitionValue * watchQuantitySold) * 1.5 : 0;
              if (newSuggested > 0) {
-                 form.setValue("saleValue", parseFloat(newSuggested.toFixed(2)));
+                 form.setValue("saleValue", parseFloat(newSuggested.toFixed(2)), { shouldValidate: true });
              }
         }
    }, [suggestedSalePrice, form, watchIsLoss, selectedProduct, watchQuantitySold]);
@@ -115,10 +125,15 @@ export default function SaleForm({ onSubmit, isLoading = false }: SaleFormProps)
     const success = await onSubmit(values);
     if (success) {
         form.reset(); // Reset form after successful submission
+        // Manually reset productId in select if needed, though form.reset should handle it
+         form.setValue('productId', '');
     }
   };
 
-  const availableProducts = products.filter(p => p.quantity > 0 || watchIsLoss); // Allow selecting OOS products if it's a loss
+   // Products available for selection (allow OOS only if loss)
+   const availableProducts = products.filter(p => watchIsLoss || p.quantity > 0);
+   const hasAvailableProducts = availableProducts.length > 0;
+
 
   return (
     <Card>
@@ -137,15 +152,24 @@ export default function SaleForm({ onSubmit, isLoading = false }: SaleFormProps)
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Produto</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading}>
+                   <Select
+                      onValueChange={field.onChange}
+                      value={field.value} // Ensure value is controlled
+                      disabled={isLoading || !hasAvailableProducts}
+                    >
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Selecione um produto" />
+                        <SelectValue placeholder={hasAvailableProducts ? "Selecione um produto" : "Nenhum produto disponível"} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {availableProducts.length > 0 ? availableProducts.map((product) => (
-                        <SelectItem key={product.id} value={product.id} disabled={product.quantity <= 0 && !watchIsLoss}>
+                      {hasAvailableProducts ? availableProducts.map((product) => (
+                        <SelectItem
+                            key={product.id}
+                            value={product.id}
+                            // Disable if not loss and out of stock
+                            disabled={!watchIsLoss && product.quantity <= 0}
+                         >
                           {product.name} ({product.quantity} em estoque)
                         </SelectItem>
                       )) : <SelectItem value="no-products" disabled>Nenhum produto disponível</SelectItem> }
@@ -156,9 +180,9 @@ export default function SaleForm({ onSubmit, isLoading = false }: SaleFormProps)
               )}
             />
 
-             {selectedProduct && !watchIsLoss && selectedProduct.quantity < watchQuantitySold && (
+             {selectedProduct && (selectedProduct.quantity < watchQuantitySold) && (
                 <FormDescription className="text-destructive flex items-center gap-1">
-                    <AlertTriangle className="h-4 w-4" /> Estoque insuficiente ({selectedProduct.quantity} disponível).
+                    <AlertTriangle className="h-4 w-4" /> Estoque insuficiente ({selectedProduct.quantity} disponível). A quantidade será registrada como negativa se prosseguir.
                 </FormDescription>
              )}
 
@@ -182,7 +206,8 @@ export default function SaleForm({ onSubmit, isLoading = false }: SaleFormProps)
               name="saleValue"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Valor Total da Venda (R$)</FormLabel>
+                  {/* Update label to include currency */}
+                  <FormLabel>Valor Total da Venda ({currencySymbol})</FormLabel>
                   <FormControl>
                      {/* Disable sale value input if it's a loss */}
                     <Input
@@ -196,12 +221,12 @@ export default function SaleForm({ onSubmit, isLoading = false }: SaleFormProps)
                   </FormControl>
                    {suggestedSalePrice > 0 && !watchIsLoss && (
                      <FormDescription>
-                        Preço sugerido: {suggestedSalePrice.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                        Preço sugerido: {formatCurrency(suggestedSalePrice, currency)}
                      </FormDescription>
                    )}
                    {watchIsLoss && (
                        <FormDescription>
-                            O valor da venda é 0 para perdas. O custo será registrado como prejuízo.
+                            O valor da venda é 0 para perdas. O custo do produto ({formatCurrency(selectedProduct?.acquisitionValue, currency)} por unidade) será registrado como prejuízo.
                        </FormDescription>
                    )}
                   <FormMessage />
@@ -213,7 +238,7 @@ export default function SaleForm({ onSubmit, isLoading = false }: SaleFormProps)
               control={form.control}
               name="isLoss"
               render={({ field }) => (
-                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 shadow">
+                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 shadow-sm">
                   <FormControl>
                     <Checkbox
                       checked={field.value}
@@ -226,7 +251,7 @@ export default function SaleForm({ onSubmit, isLoading = false }: SaleFormProps)
                       Registrar como Prejuízo / Perda?
                     </FormLabel>
                     <FormDescription>
-                      Marque esta opção se o produto foi perdido, danificado, ou saiu sem receita.
+                      Marque se o item saiu do estoque sem gerar receita (dano, vencimento, furto, etc.).
                     </FormDescription>
                   </div>
                 </FormItem>
@@ -239,11 +264,12 @@ export default function SaleForm({ onSubmit, isLoading = false }: SaleFormProps)
                 name="lossReason"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Motivo da Perda</FormLabel>
+                    <FormLabel>Motivo da Perda (Obrigatório)</FormLabel>
                     <FormControl>
                       <Textarea
                         placeholder="Descreva o motivo da perda (Ex: Produto danificado, Vencido, Furto)"
                         {...field}
+                        value={field.value ?? ''} // Ensure value is not null/undefined
                         disabled={isLoading}
                          />
                     </FormControl>
@@ -253,7 +279,11 @@ export default function SaleForm({ onSubmit, isLoading = false }: SaleFormProps)
               />
             )}
 
-            <Button type="submit" disabled={isLoading || (availableProducts.length === 0 && !watchIsLoss)} className="w-full bg-accent hover:bg-accent/90">
+            <Button
+                type="submit"
+                disabled={isLoading || !hasAvailableProducts || (selectedProduct && selectedProduct.quantity < watchQuantitySold)}
+                className="w-full bg-accent hover:bg-accent/90"
+                >
                {isLoading ? "Registrando..." : (watchIsLoss ? "Registrar Perda" : "Registrar Venda")}
             </Button>
           </form>

@@ -1,8 +1,9 @@
+// src/components/layout/app-header.tsx
 "use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Package, ShoppingCart, BarChart3, Wifi, WifiOff, Cloud, Upload, Download } from "lucide-react";
+import { Package, ShoppingCart, BarChart3, Wifi, WifiOff, Cloud, Upload, Download, Landmark } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useStore } from "@/store/store";
@@ -19,15 +20,20 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
 } from "@/components/ui/dropdown-menu";
 import { handleExport, handleImport } from '@/lib/data-utils';
 import { useToast } from "@/hooks/use-toast";
-import { useRef } from "react";
+import React, { useRef } from "react";
+import { SUPPORTED_CURRENCIES, getCurrencyConfig } from "@/config/currencies";
 
 
 export default function AppHeader() {
   const pathname = usePathname();
-  const { isOnline, syncData, lastSync, setProducts, setSales, setLastSync } = useStore();
+  const { isOnline, syncData, lastSync, setProducts, setSales, setLastSync, currency, setCurrency } = useStore();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -84,12 +90,23 @@ export default function AppHeader() {
     }
 };
 
+ const handleCurrencyChange = (value: string) => {
+    if (value) {
+        setCurrency(value);
+        toast({
+             title: "Moeda Alterada",
+             description: `Moeda definida para ${getCurrencyConfig(value)?.code || value}.`,
+        });
+    }
+ };
+
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center justify-between">
-        <div className="flex items-center gap-4">
-          <h1 className="text-xl font-semibold text-primary-foreground mr-6">Vendas Tranquilas</h1>
+        <div className="flex items-center gap-4 md:gap-6">
+          <h1 className="text-xl font-semibold text-primary-foreground">Vendas Tranquilas</h1>
+          {/* Desktop Navigation */}
           <Tabs value={getActiveTab()} className="hidden md:block">
             <TabsList>
               <TabsTrigger value="produtos" asChild>
@@ -111,7 +128,42 @@ export default function AppHeader() {
           </Tabs>
         </div>
 
-        <div className="flex items-center gap-3">
+        {/* Right side controls */}
+        <div className="flex items-center gap-2 md:gap-3">
+           {/* Currency Selector Dropdown */}
+           <DropdownMenu>
+              <TooltipProvider>
+              <Tooltip>
+                  <TooltipTrigger asChild>
+                     <DropdownMenuTrigger asChild>
+                       <Button variant="outline" size="icon" className="relative">
+                         <Landmark className="h-4 w-4" />
+                         <span className="absolute -top-1 -right-1 text-xs font-bold text-muted-foreground bg-background rounded-full px-0.5">
+                            {getCurrencyConfig(currency)?.symbol || currency}
+                         </span>
+                         <span className="sr-only">Selecionar Moeda</span>
+                       </Button>
+                     </DropdownMenuTrigger>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                      <p>Selecionar Moeda ({currency})</p>
+                  </TooltipContent>
+              </Tooltip>
+              </TooltipProvider>
+              <DropdownMenuContent align="end" className="w-56">
+                 <DropdownMenuLabel>Moeda da Aplicação</DropdownMenuLabel>
+                 <DropdownMenuSeparator />
+                 <DropdownMenuRadioGroup value={currency} onValueChange={handleCurrencyChange}>
+                    {SUPPORTED_CURRENCIES.map((curr) => (
+                       <DropdownMenuRadioItem key={curr.code} value={curr.code}>
+                          {curr.code} ({curr.symbol})
+                       </DropdownMenuRadioItem>
+                    ))}
+                 </DropdownMenuRadioGroup>
+              </DropdownMenuContent>
+           </DropdownMenu>
+
+           {/* Import/Export Dropdown */}
            <DropdownMenu>
             <TooltipProvider>
             <Tooltip>
@@ -147,7 +199,7 @@ export default function AppHeader() {
             onChange={onFileSelected}
            />
 
-
+           {/* Online Status Indicator */}
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -167,6 +219,9 @@ export default function AppHeader() {
                      <p className="text-xs text-muted-foreground">
                          Sincronização pendente.
                     </p>
+                 )}
+                 {!isOnline && (
+                    <p className="text-xs text-muted-foreground">Dados serão sincronizados ao conectar.</p>
                  )}
               </TooltipContent>
             </Tooltip>

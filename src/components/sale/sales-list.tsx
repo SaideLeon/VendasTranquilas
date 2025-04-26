@@ -1,3 +1,4 @@
+// src/components/sale/sales-list.tsx
 "use client";
 
 import React, { useState } from 'react';
@@ -11,7 +12,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Trash2, ArrowDownCircle, ArrowUpCircle, AlertTriangle, PackageX, ShoppingCart } from "lucide-react"; // Import ShoppingCart
+import { Trash2, ArrowDownCircle, ArrowUpCircle, AlertTriangle, PackageX, ShoppingCart } from "lucide-react"; // Added ShoppingCart
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import {
@@ -34,6 +35,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useStore } from '@/store/store'; // Import useStore
+import { formatCurrency } from '@/lib/currency-utils'; // Import the utility
 
 
 interface SalesListProps {
@@ -43,10 +46,12 @@ interface SalesListProps {
 
 export default function SalesList({ sales, onDelete }: SalesListProps) {
    const [saleToDelete, setSaleToDelete] = useState<Sale | null>(null);
+   const { currency } = useStore(); // Get current currency
 
-  const formatCurrency = (value: number) => {
-    return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-  };
+   // Use the utility function, passing the current currency
+   const formatValue = (value: number) => {
+       return formatCurrency(value, currency);
+   };
 
    const formatDate = (dateString: string) => {
       try {
@@ -112,11 +117,13 @@ export default function SalesList({ sales, onDelete }: SalesListProps) {
                                  )}
                              </TableCell>
                             <TableCell className="text-right">{sale.quantitySold}</TableCell>
-                            <TableCell className="text-right">{formatCurrency(sale.saleValue)}</TableCell>
+                            {/* Use the updated formatValue function */}
+                            <TableCell className="text-right">{formatValue(sale.saleValue)}</TableCell>
                             <TableCell className={`text-right font-semibold ${sale.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                                 <span className="inline-flex items-center gap-1">
                                  {sale.profit >= 0 ? <ArrowUpCircle className="h-4 w-4"/> : <ArrowDownCircle className="h-4 w-4"/>}
-                                 {formatCurrency(sale.profit)}
+                                 {/* Use the updated formatValue function */}
+                                 {formatValue(sale.profit)}
                                 </span>
                             </TableCell>
                              <TableCell className="hidden md:table-cell">{formatDate(sale.createdAt)}</TableCell>
