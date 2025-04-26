@@ -23,7 +23,7 @@ export default function RelatoriosPage() {
   // Use the utility function, passing the current currency from the store
   const formatValue = (value: number | undefined | null): string => {
       return formatCurrency(value, currency);
-  }; // Added semicolon and explicit return type
+  }; // Added semicolon back
 
   return (
     <div className="container mx-auto p-4 space-y-8">
