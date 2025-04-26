@@ -128,7 +128,7 @@ export default function SalesList({ sales, onDelete, onViewDetails }: SalesListP
                          </Button>
                          {/* Delete Button */}
                          <AlertDialog>
-                           <AlertDialogTrigger asChild>
+                           <AlertDialogTitle asChild>
                              <Button
                                variant="destructive" // Changed from ghost for consistency
                                size="icon"
@@ -137,7 +137,7 @@ export default function SalesList({ sales, onDelete, onViewDetails }: SalesListP
                              >
                                <Trash2 className="h-4 w-4" />
                              </Button>
-                           </AlertDialogTrigger>
+                           </AlertDialogTitle>
                            <AlertDialogContent>
                              <AlertDialogHeader>
                                <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
