@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import SaleForm from '@/components/sale/sale-form';
 import SalesList from '@/components/sale/sales-list';
+import SaleDetailsModal from '@/components/sale/sale-details-modal'; // Import the modal
 import { useStore } from '@/store/store';
 import type { Sale } from '@/types';
 import { useToast } from "@/hooks/use-toast";
@@ -10,8 +11,10 @@ import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
 
 export default function VendasPage() {
-  const { sales, addSale, deleteSale, products } = useStore();
+  const { sales, addSale, deleteSale, products, getProductById } = useStore(); // Added getProductById
   const [isFormVisible, setIsFormVisible] = useState(false); // Control form visibility
+  const [viewingSale, setViewingSale] = useState<Sale | null>(null); // State for viewing sale details
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false); // State for modal visibility
   const { toast } = useToast();
 
    const handleFormSubmit = async (data: Omit<Sale, 'id' | 'profit' | 'productName' | 'createdAt'>) => {
@@ -55,6 +58,10 @@ export default function VendasPage() {
              description: `Registro de ${saleToDelete?.isLoss ? 'perda' : 'venda'} para ${saleToDelete?.productName} excluído.`,
              variant: "destructive"
          });
+          if (viewingSale?.id === saleId) { // Close details modal if viewed sale is deleted
+             setIsDetailsModalOpen(false);
+             setViewingSale(null);
+          }
      } catch (error) {
         console.error("Error deleting sale:", error);
          toast({
@@ -64,6 +71,11 @@ export default function VendasPage() {
          });
      }
   };
+
+   const handleViewDetails = (sale: Sale) => {
+       setViewingSale(sale);
+       setIsDetailsModalOpen(true);
+   };
 
    const toggleFormVisibility = () => {
        setIsFormVisible(!isFormVisible);
@@ -96,7 +108,21 @@ export default function VendasPage() {
        </div>
 
       {/* List Section */}
-      <SalesList sales={sales} onDelete={handleDelete} />
+      <SalesList
+          sales={sales}
+          onDelete={handleDelete}
+          onViewDetails={handleViewDetails} // Pass the handler
+      />
+
+       {/* Sale Details Modal */}
+       {viewingSale && (
+           <SaleDetailsModal
+             sale={viewingSale}
+             product={getProductById(viewingSale.productId)} // Pass product details
+             isOpen={isDetailsModalOpen}
+             onClose={() => setIsDetailsModalOpen(false)}
+           />
+       )}
     </div>
   );
 }
