@@ -20,7 +20,7 @@ import { ptBR } from 'date-fns/locale';
 import { ShoppingCart, Package, DollarSign, Calendar, Hash, TrendingUp, TrendingDown, AlertTriangle, Info, MessageSquare } from 'lucide-react';
 import { Badge } from '../ui/badge';
 import { Separator } from '../ui/separator';
-import { ScrollArea } from '../ui/scroll-area';
+import { ScrollArea } from '../ui/scroll-area'; // Import ScrollArea
 
 interface SaleDetailsModalProps {
   sale: Sale | null;
@@ -52,7 +52,8 @@ export default function SaleDetailsModal({ sale, product, isOpen, onClose }: Sal
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px] max-h-[90vh]">
+      {/* Constrain modal height and make it flex column */}
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {sale.isLoss ? <AlertTriangle className="h-5 w-5 text-destructive"/> : <ShoppingCart className="h-5 w-5 text-green-600"/>}
@@ -63,7 +64,8 @@ export default function SaleDetailsModal({ sale, product, isOpen, onClose }: Sal
           </DialogDescription>
         </DialogHeader>
 
-        <ScrollArea className="max-h-[calc(90vh-10rem)] pr-4">
+        {/* Make content scrollable */}
+        <ScrollArea className="flex-grow overflow-y-auto pr-6"> {/* Add ScrollArea with padding */}
           <div className="grid gap-3 py-4">
             {/* Product Info */}
             <div className="flex items-center gap-2 border-b pb-2">
@@ -92,18 +94,18 @@ export default function SaleDetailsModal({ sale, product, isOpen, onClose }: Sal
                <DollarSign className="h-4 w-4 text-muted-foreground"/>
                <span className="text-sm font-medium text-muted-foreground">Custo Unitário (na época):</span>
                <span>
-                   {unitCostError ? <span className="text-destructive">{unitCostError}</span> : formatValue(unitCost)}
+                   {unitCostError ? <Badge variant="destructive">{unitCostError}</Badge> : formatValue(unitCost)}
                </span>
             </div>
              <div className="flex items-center gap-2">
                <DollarSign className="h-4 w-4 text-muted-foreground"/>
                <span className="text-sm font-medium text-muted-foreground">Valor Total da Venda:</span>
-               <span>{formatValue(sale.saleValue)}</span>
+               <span>{sale.isLoss ? '-' : formatValue(sale.saleValue)}</span> {/* Show '-' for loss */}
             </div>
              <div className="flex items-center gap-2">
-                 {sale.profit >= 0 ? <TrendingUp className="h-4 w-4 text-green-600"/> : <TrendingDown className="h-4 w-4 text-red-600"/>}
+                 {(sale.profit ?? 0) >= 0 ? <TrendingUp className="h-4 w-4 text-green-600"/> : <TrendingDown className="h-4 w-4 text-red-600"/>}
                  <span className="text-sm font-medium text-muted-foreground">Lucro / Prejuízo:</span>
-                 <span className={`font-semibold ${sale.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                 <span className={`font-semibold ${(sale.profit ?? 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                     {formatValue(sale.profit)}
                  </span>
             </div>
@@ -122,9 +124,10 @@ export default function SaleDetailsModal({ sale, product, isOpen, onClose }: Sal
                </>
             )}
           </div>
-        </ScrollArea>
+        </ScrollArea> {/* Close ScrollArea */}
 
-        <DialogFooter>
+        {/* Footer sticks to bottom */}
+        <DialogFooter className="mt-auto pt-4 border-t">
           <Button variant="outline" onClick={onClose}>Fechar</Button>
         </DialogFooter>
       </DialogContent>
