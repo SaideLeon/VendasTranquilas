@@ -170,31 +170,32 @@ export default function DebtList({ title, debts, onEdit, onDelete, onViewDetails
       </CardHeader>
       <CardContent>
         <ScrollArea className="w-full whitespace-nowrap rounded-md border">
-          <TooltipProvider>
-            <Table className="min-w-max">{/* Ensure no whitespace */}
-              <TableHeader>{/* Ensure no whitespace */}
-                <TableRow>{/* Ensure no whitespace */}
+           {/* Moved TooltipProvider outside Table */}
+           <TooltipProvider>
+             <Table className="min-w-max">
+              <TableHeader>
+                <TableRow>
                   <TableHead className="sticky left-0 bg-background z-10 min-w-[200px]">Descrição</TableHead>
                   <TableHead className="text-right min-w-[120px]">Valor Total</TableHead>
                   <TableHead className="text-right min-w-[120px]">Valor Pago</TableHead>
                   <TableHead className="text-right min-w-[120px]">Valor Restante</TableHead>
                   <TableHead className="min-w-[100px]">Status</TableHead>
-                   <TableHead className="min-w-[120px]">Progresso</TableHead> {/* Progress Bar */}
+                   <TableHead className="min-w-[120px]">Progresso</TableHead>{/* Progress Bar */}
                   <TableHead className="min-w-[120px]">Vencimento</TableHead>
                   <TableHead className="min-w-[150px]">Contato</TableHead>
                   <TableHead className="min-w-[150px]">Criado em</TableHead>
-                  <TableHead className="sticky right-0 bg-background z-10 text-right min-w-[180px]">Ações</TableHead> {/* Increased width */}
+                  <TableHead className="sticky right-0 bg-background z-10 text-right min-w-[180px]">Ações</TableHead>{/* Increased width */}
                 </TableRow>
               </TableHeader>
-              <TableBody>{/* Ensure no whitespace */}
+              <TableBody>
                 {filteredDebts.length > 0 ? (
                   filteredDebts.map((debt) => {
                     const statusProps = getStatusProps(debt.status);
                     const remainingAmount = debt.amount - debt.amountPaid;
                     const progress = debt.amount > 0 ? (debt.amountPaid / debt.amount) * 100 : 0;
 
-                    return (
-                      <TableRow key={debt.id}>{/* Ensure no whitespace */}
+                    return (// Ensure no whitespace before/after this tag
+                      <TableRow key={debt.id}>
                         <TableCell className="sticky left-0 bg-background z-10 font-medium">{debt.description}</TableCell>
                         <TableCell className="text-right">{formatValue(debt.amount)}</TableCell>
                         <TableCell className="text-right">{formatValue(debt.amountPaid)}</TableCell>
@@ -222,7 +223,7 @@ export default function DebtList({ title, debts, onEdit, onDelete, onViewDetails
                         <TableCell>{formatDate(debt.createdAt)}</TableCell>
                         <TableCell className="sticky right-0 bg-background z-10 text-right space-x-1">
                            {/* Quick Pay/Update */}
-                           {debt.status !== 'paid' && (
+                           {debt.status !== 'paid' && (// Ensure no whitespace before/after this tag
                                 <DropdownMenu onOpenChange={(open) => { if (!open) setQuickPayDebtId(null); }}>
                                     <DropdownMenuTrigger asChild>
                                         <Button variant="outline" size="icon" aria-label={`Registrar pagamento para ${debt.description}`}>
@@ -256,9 +257,9 @@ export default function DebtList({ title, debts, onEdit, onDelete, onViewDetails
                                              Marcar como Totalmente Pago
                                          </DropdownMenuItem>
                                     </DropdownMenuContent>
-                                </DropdownMenu>
+                                </DropdownMenu>// Ensure no whitespace before/after this tag
                             )}
-
+                            {/* Actions */}
                           <Button variant="outline" size="icon" onClick={() => onViewDetails(debt)} aria-label={`Visualizar detalhes de ${debt.description}`}>
                             <Eye className="h-4 w-4" />
                           </Button>
@@ -285,12 +286,12 @@ export default function DebtList({ title, debts, onEdit, onDelete, onViewDetails
                             </AlertDialogContent>
                           </AlertDialog>
                         </TableCell>
-                      </TableRow>
+                      </TableRow>// Ensure no whitespace before/after this tag
                     );
                   })
-                ) : (
-                  <TableRow>{/* Ensure no whitespace */}
-                    <TableCell colSpan={10} className="text-center h-24"> {/* Adjusted colspan */}
+                ) : (// Ensure no whitespace before/after this tag
+                  <TableRow>
+                    <TableCell colSpan={10} className="text-center h-24">{/* Adjusted colspan */}
                       <div className="flex flex-col items-center justify-center gap-2">
                         <HandCoins className="h-8 w-8 text-muted-foreground" />
                         <p className="text-muted-foreground">
@@ -298,11 +299,11 @@ export default function DebtList({ title, debts, onEdit, onDelete, onViewDetails
                         </p>
                       </div>
                     </TableCell>
-                  </TableRow>
+                  </TableRow>// Ensure no whitespace before/after this tag
                 )}
               </TableBody>
             </Table>
-          </TooltipProvider>
+           </TooltipProvider>
           <ScrollBar orientation="horizontal" />
         </ScrollArea>
       </CardContent>
