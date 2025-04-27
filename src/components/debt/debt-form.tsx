@@ -33,6 +33,7 @@ import { useStore } from "@/store/store";
 import { getCurrencyConfig } from "@/config/currencies";
 import { format, parseISO } from 'date-fns'; // Import date-fns functions
 import { cn } from "@/lib/utils";
+import { formatCurrency } from "@/lib/currency-utils"; // Use the utility
 
 // Base schema without amountPaid (handled in edit)
 const formSchema = z.object({
@@ -45,7 +46,7 @@ const formSchema = z.object({
   }),
   dueDate: z.date().optional().nullable(), // Allow optional due date
   contactName: z.string().optional(),
-  relatedSaleId: z.string().optional(), // Optional link to sale
+  relatedSaleId: z.string().optional().nullable(), // Optional link to sale, allow null/undefined
 });
 
 // Schema for editing, includes amountPaid and status
@@ -70,6 +71,9 @@ interface DebtFormProps {
   isLoading?: boolean;
 }
 
+// Define a constant for the "None" value to avoid magic strings
+const NONE_VALUE = "__none__";
+
 export default function DebtForm({ onSubmit, initialData, onCancel, isLoading = false }: DebtFormProps) {
   const { currency, sales } = useStore(); // Get sales for linking
   const currencyConfig = getCurrencyConfig(currency);
@@ -84,6 +88,7 @@ export default function DebtForm({ onSubmit, initialData, onCancel, isLoading = 
       ? {
           ...initialData,
           dueDate: initialData.dueDate ? parseISO(initialData.dueDate) : null, // Convert ISO string to Date object
+          relatedSaleId: initialData.relatedSaleId ?? undefined, // Ensure it's undefined if null/missing
           // Status is managed by the store based on amountPaid, so we don't set it directly as default here
           // amountPaid is already in initialData
         }
@@ -93,7 +98,7 @@ export default function DebtForm({ onSubmit, initialData, onCancel, isLoading = 
           amount: 0,
           dueDate: null,
           contactName: "",
-          relatedSaleId: "",
+          relatedSaleId: undefined, // Use undefined for no selection initially
           amountPaid: 0, // Default for new
           status: 'pending', // Default for new
         },
@@ -106,6 +111,7 @@ export default function DebtForm({ onSubmit, initialData, onCancel, isLoading = 
         ...initialData,
         dueDate: initialData.dueDate ? parseISO(initialData.dueDate) : null,
         amountPaid: initialData.amountPaid ?? 0, // Ensure amountPaid exists
+        relatedSaleId: initialData.relatedSaleId ?? undefined,
         // Don't reset status, let store handle it
       });
     } else {
@@ -115,7 +121,7 @@ export default function DebtForm({ onSubmit, initialData, onCancel, isLoading = 
         amount: 0,
         dueDate: null,
         contactName: "",
-        relatedSaleId: "",
+        relatedSaleId: undefined, // Reset to undefined
         amountPaid: 0,
         status: 'pending',
       });
@@ -127,6 +133,7 @@ export default function DebtForm({ onSubmit, initialData, onCancel, isLoading = 
       const dataToSubmit = {
           ...values,
           dueDate: values.dueDate ? values.dueDate.toISOString() : null,
+          relatedSaleId: values.relatedSaleId === NONE_VALUE ? undefined : values.relatedSaleId, // Ensure undefined if "None" was selected
       };
       onSubmit(dataToSubmit);
   };
@@ -295,14 +302,17 @@ export default function DebtForm({ onSubmit, initialData, onCancel, isLoading = 
                    render={({ field }) => (
                      <FormItem>
                        <FormLabel>Venda Relacionada (Opcional)</FormLabel>
-                       <Select onValueChange={field.onChange} value={field.value ?? ""} disabled={isLoading}>
+                       {/* Ensure the value passed to Select is never null or empty string unless intended */}
+                       <Select onValueChange={field.onChange} value={field.value ?? NONE_VALUE} disabled={isLoading}>
                          <FormControl>
                            <SelectTrigger>
+                             {/* Display placeholder correctly based on value */}
                              <SelectValue placeholder="Vincular a uma venda existente" />
                            </SelectTrigger>
                          </FormControl>
                          <SelectContent>
-                           <SelectItem value="">Nenhuma</SelectItem>
+                           {/* Use a distinct non-empty value for the "None" option */}
+                           <SelectItem value={NONE_VALUE}>Nenhuma</SelectItem>
                            {sales
                              .filter(s => !s.isLoss) // Only link non-loss sales
                              .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()) // Sort newest first
@@ -329,17 +339,4 @@ export default function DebtForm({ onSubmit, initialData, onCancel, isLoading = 
       </CardContent>
     </Card>
   );
-}
-
-// Helper function (consider moving to lib/currency-utils if used elsewhere)
-function formatCurrency(value: number, currencyCode: string): string {
-    const config = getCurrencyConfig(currencyCode);
-    const locale = config?.locale || 'pt-BR'; // Default locale
-    const code = config?.code || 'BRL'; // Default currency
-    try {
-        return new Intl.NumberFormat(locale, { style: 'currency', currency: code }).format(value);
-    } catch (e) {
-        console.error("Currency formatting failed:", e);
-        return `${config?.symbol || '$'} ${value.toFixed(2)}`;
-    }
 }
