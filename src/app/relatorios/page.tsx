@@ -4,7 +4,8 @@
 import React, { useMemo } from 'react';
 import { useStore } from '@/store/store';
 import ReportCard from '@/components/report/report-card';
-import { Package, ShoppingCart, DollarSign, TrendingUp, TrendingDown, Star, AlertOctagon, BarChart3, Info } from 'lucide-react'; // Added Info icon
+// Added ArrowRightLeft for receivables/payables
+import { Package, ShoppingCart, DollarSign, TrendingUp, TrendingDown, Star, AlertOctagon, BarChart3, Info, ArrowRightLeft } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatCurrency } from '@/lib/currency-utils';
 import {
@@ -12,7 +13,7 @@ import {
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/components/ui/tooltip"; // Import Tooltip components
+} from "@/components/ui/tooltip";
 
 export default function RelatoriosPage() {
   // Get required state including the current currency and the report data calculation function
@@ -24,7 +25,7 @@ export default function RelatoriosPage() {
   // Memoize report data calculation based on the store's data getter
   const reportData = useMemo(() => {
     return getSalesReportData();
-  }, [getSalesReportData]); // Recalculate only when the function reference changes (which happens when products/sales change)
+  }, [getSalesReportData]); // Recalculate only when the function reference changes (which happens when data changes)
 
   // Use the utility function, passing the current currency from the store
   const formatValue = (value: number | undefined | null): string => {
@@ -58,8 +59,8 @@ export default function RelatoriosPage() {
             title="Valor do Estoque Atual"
             value={formatValue(reportData.totalInvestment)}
             icon={DollarSign}
-            description="Custo total estimado dos produtos em estoque baseado no custo unitário inicial."
-            tooltip="Calculado como: Σ (Custo Unitário Inicial * Quantidade Atual em Estoque) para cada produto."
+            description="Custo total estimado dos produtos em estoque."
+            tooltip="Calculado como: Σ (Custo Unitário * Quantidade Atual em Estoque) para cada produto."
             colorClass="text-amber-600"
           />
           <ReportCard
@@ -73,12 +74,12 @@ export default function RelatoriosPage() {
 
         </div>
 
-         <div className="grid gap-4 md:grid-cols-2">
+         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4"> {/* Adjusted grid for 4 items */}
               <ReportCard
                   title="Lucro Líquido Total"
                   value={formatValue(reportData.totalProfit)}
                   icon={TrendingUp}
-                  description="Faturamento - Custo dos Produtos Vendidos - Prejuízos Totais."
+                  description="Faturamento - Custo dos Vendidos - Prejuízos Totais."
                   tooltip="Resultado financeiro final após custos e perdas."
                   colorClass={reportData.totalProfit >= 0 ? "text-green-600" : "text-red-600"}
                   />
@@ -90,6 +91,24 @@ export default function RelatoriosPage() {
                   tooltip="Custo total dos itens removidos do estoque devido a danos, vencimento, etc."
                   colorClass={reportData.totalLossValue > 0 ? "text-red-600" : "text-gray-500"}
                   />
+               {/* Added Receivables Card */}
+               <ReportCard
+                   title="Contas a Receber (Pendentes)"
+                   value={formatValue(reportData.totalReceivablesPending)}
+                   icon={ArrowRightLeft} // Reusing icon, consider a more specific one if available
+                   description="Valor total pendente de dívidas a receber."
+                   tooltip="Soma dos valores restantes de todas as dívidas a receber com status 'Pendente' ou 'Parcialmente Pago'."
+                   colorClass="text-lime-600" // Example color
+                   />
+               {/* Added Payables Card */}
+               <ReportCard
+                   title="Contas a Pagar (Pendentes)"
+                   value={formatValue(reportData.totalPayablesPending)}
+                   icon={ArrowRightLeft} // Reusing icon
+                   description="Valor total pendente de dívidas a pagar."
+                   tooltip="Soma dos valores restantes de todas as dívidas a pagar com status 'Pendente' ou 'Parcialmente Pago'."
+                   colorClass="text-orange-600" // Example color
+                   />
          </div>
 
 

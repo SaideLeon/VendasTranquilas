@@ -1,22 +1,24 @@
 import { useStore } from '@/store/store';
-import type { Product, Sale } from '@/types';
+import type { Product, Sale, Debt } from '@/types'; // Add Debt type
 
 interface ExportData {
   products: Product[];
   sales: Sale[];
+  debts: Debt[]; // Add debts field
   exportedAt: string;
   version: number; // Simple versioning
 }
 
-const DATA_VERSION = 1;
+const DATA_VERSION = 1; // Keep version consistent or increment if structure changes significantly
 
 // Function to export data
 export const handleExport = async () => {
-  const { products, sales } = useStore.getState();
+  const { products, sales, debts } = useStore.getState(); // Get debts from store
 
   const dataToExport: ExportData = {
     products,
     sales,
+    debts, // Include debts in the export object
     exportedAt: new Date().toISOString(),
     version: DATA_VERSION,
   };
@@ -39,6 +41,7 @@ export const handleImport = async (
     file: File,
     setProducts: (products: Product[]) => void,
     setSales: (sales: Sale[]) => void,
+    setDebts: (debts: Debt[]) => void, // Add setDebts function
     setLastSync: (date: Date | null) => void
     // merge: boolean = false // Option to merge instead of replace (more complex)
     ): Promise<void> => {
@@ -61,17 +64,23 @@ export const handleImport = async (
         if (!Array.isArray(importedData.products) || !Array.isArray(importedData.sales)) {
           throw new Error("Invalid file format: Missing 'products' or 'sales' array.");
         }
+         // Validate debts array (optional, defaults to empty if missing)
+         if (importedData.debts && !Array.isArray(importedData.debts)) {
+             throw new Error("Invalid file format: 'debts' field must be an array if present.");
+         }
+
          if (importedData.version !== DATA_VERSION) {
              console.warn(`Importing data from a different version (File: ${importedData.version}, App: ${DATA_VERSION}). Compatibility issues may arise.`);
              // Add more robust version handling/migration if needed
          }
 
 
-        // TODO: Add more robust validation for each product and sale object structure if needed
+        // TODO: Add more robust validation for each product, sale, and debt object structure if needed
 
         // Replace current data
         setProducts(importedData.products);
         setSales(importedData.sales);
+        setDebts(importedData.debts || []); // Set debts, defaulting to empty array if not present
         setLastSync(null); // Reset sync status after import
 
         resolve();

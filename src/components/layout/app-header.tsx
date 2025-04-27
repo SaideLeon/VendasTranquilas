@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Package, ShoppingCart, BarChart3, Wifi, WifiOff, Cloud, Upload, Download, Landmark } from "lucide-react";
+import { Package, ShoppingCart, BarChart3, Wifi, WifiOff, Cloud, Upload, Download, Landmark, HandCoins } from "lucide-react"; // Added HandCoins for Debts
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useStore } from "@/store/store";
@@ -33,13 +33,15 @@ import { SUPPORTED_CURRENCIES, getCurrencyConfig } from "@/config/currencies";
 
 export default function AppHeader() {
   const pathname = usePathname();
-  const { isOnline, syncData, lastSync, setProducts, setSales, setLastSync, currency, setCurrency } = useStore();
+  // Added setDebts to the destructuring
+  const { isOnline, syncData, lastSync, setProducts, setSales, setDebts, setLastSync, currency, setCurrency } = useStore();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const getActiveTab = () => {
     if (pathname.startsWith("/produtos")) return "produtos";
     if (pathname.startsWith("/vendas")) return "vendas";
+    if (pathname.startsWith("/dividas")) return "dividas"; // Added debts tab
     if (pathname.startsWith("/relatorios")) return "relatorios";
     return "";
   };
@@ -53,7 +55,8 @@ export default function AppHeader() {
     if (!file) return;
 
     try {
-      await handleImport(file, setProducts, setSales, setLastSync);
+      // Pass setDebts to handleImport
+      await handleImport(file, setProducts, setSales, setDebts, setLastSync);
       toast({
         title: "Importação Concluída",
         description: "Os dados foram importados com sucesso.",
@@ -105,7 +108,9 @@ export default function AppHeader() {
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center justify-between">
         <div className="flex items-center gap-4 md:gap-6">
-          <h1 className="text-xl font-semibold text-primary-foreground">Vendas Tranquilas</h1>
+          <Link href="/" className="text-xl font-semibold text-primary-foreground mr-4"> {/* Added Link and margin */}
+            Vendas Tranquilas
+          </Link>
           {/* Desktop Navigation */}
           <Tabs value={getActiveTab()} className="hidden md:block">
             <TabsList>
@@ -117,6 +122,12 @@ export default function AppHeader() {
               <TabsTrigger value="vendas" asChild>
                 <Link href="/vendas">
                   <ShoppingCart className="mr-2 h-4 w-4" /> Vendas
+                </Link>
+              </TabsTrigger>
+               {/* Debts Tab */}
+               <TabsTrigger value="dividas" asChild>
+                <Link href="/dividas">
+                  <HandCoins className="mr-2 h-4 w-4" /> Dívidas
                 </Link>
               </TabsTrigger>
               <TabsTrigger value="relatorios" asChild>
@@ -231,7 +242,8 @@ export default function AppHeader() {
        {/* Mobile Navigation */}
       <div className="md:hidden border-t">
          <Tabs value={getActiveTab()} className="w-full p-1">
-            <TabsList className="grid w-full grid-cols-3 h-12">
+            {/* Adjusted grid columns for 4 tabs */}
+            <TabsList className="grid w-full grid-cols-4 h-12">
               <TabsTrigger value="produtos" asChild className="h-full">
                 <Link href="/produtos" className="flex flex-col items-center justify-center text-xs gap-1">
                   <Package className="h-4 w-4" /> Produtos
@@ -240,6 +252,12 @@ export default function AppHeader() {
               <TabsTrigger value="vendas" asChild className="h-full">
                 <Link href="/vendas" className="flex flex-col items-center justify-center text-xs gap-1">
                   <ShoppingCart className="h-4 w-4" /> Vendas
+                </Link>
+              </TabsTrigger>
+               {/* Mobile Debts Tab */}
+               <TabsTrigger value="dividas" asChild className="h-full">
+                <Link href="/dividas" className="flex flex-col items-center justify-center text-xs gap-1">
+                  <HandCoins className="h-4 w-4" /> Dívidas
                 </Link>
               </TabsTrigger>
               <TabsTrigger value="relatorios" asChild className="h-full">
