@@ -37,7 +37,7 @@ import {
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/currency-utils';
 import { Badge } from '@/components/ui/badge';
-import { TooltipProvider } from '@/components/ui/tooltip'; // Ensure correct import is present
+import { TooltipProvider } from "@/components/ui/tooltip"; // Ensure this import is correct
 
 export default function InsightsPage() {
   const { products, sales, debts, currency } = useStore();
@@ -105,6 +105,7 @@ export default function InsightsPage() {
     }
   };
 
+  // Ensure no syntax errors before the return statement
   return (
     <TooltipProvider>
       <div className="container mx-auto p-4 space-y-6">
