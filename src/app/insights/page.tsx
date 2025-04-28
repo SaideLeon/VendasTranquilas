@@ -37,7 +37,7 @@ import {
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/currency-utils';
 import { Badge } from '@/components/ui/badge';
-import { TooltipProvider } from '@/components/ui/tooltip'; // Ensure correct import
+import { TooltipProvider } from '@/components/ui/tooltip'; // Ensure correct import is present
 
 export default function InsightsPage() {
   const { products, sales, debts, currency } = useStore();
@@ -106,7 +106,7 @@ export default function InsightsPage() {
   };
 
   return (
-    <TooltipProvider> {/* Wrap the entire content */}
+    <TooltipProvider>
       <div className="container mx-auto p-4 space-y-6">
         <Card>
           <CardHeader>
@@ -276,6 +276,6 @@ export default function InsightsPage() {
           </Card>
         )}
       </div>
-    </TooltipProvider> // Ensure TooltipProvider is closed correctly
+    </TooltipProvider>
   );
 }
