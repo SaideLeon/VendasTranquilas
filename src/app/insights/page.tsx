@@ -2,10 +2,8 @@
 
 import React, { useState } from 'react';
 import { useStore } from '@/store/store';
-import {
-  analyzeFinances,
-  type FinancialAnalysisOutput,
-} from '@/ai/flows/financial-analysis-flow';
+import { analyzeFinances } from '@/ai/flows/financial-analysis-flow';
+import type { FinancialAnalysisOutput } from '@/ai/types/financial-analysis'; // Updated import path
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -51,12 +49,19 @@ export default function InsightsPage() {
     setError(null);
     setAnalysisResult(null);
     try {
-      const result = await analyzeFinances({
-        products,
-        sales,
-        debts,
+      // Map data to match the expected input schema (using actual store data)
+      const inputData = {
+        products: products.map(p => ({ ...p, createdAt: p.createdAt ?? new Date(0).toISOString() })), // Ensure createdAt is string
+        sales: sales.map(s => ({ ...s, createdAt: s.createdAt ?? new Date(0).toISOString(), profit: s.profit ?? 0 })), // Ensure createdAt is string and profit exists
+        debts: debts.map(d => ({
+          ...d,
+          dueDate: d.dueDate ? new Date(d.dueDate).toISOString() : null,
+          createdAt: d.createdAt ?? new Date(0).toISOString(),
+          paidAt: d.paidAt ? new Date(d.paidAt).toISOString() : null,
+        })),
         currencyCode: currency,
-      });
+      };
+      const result = await analyzeFinances(inputData);
       setAnalysisResult(result);
     } catch (err) {
       console.error('Financial analysis failed:', err);
@@ -105,6 +110,7 @@ export default function InsightsPage() {
     }
   };
 
+  // Ensure no syntax errors before the return statement
   return (
     <TooltipProvider>
       <div className="container mx-auto p-4 space-y-6">
