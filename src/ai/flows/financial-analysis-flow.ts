@@ -158,8 +158,8 @@ export async function analyzeFinances(
   return financialAnalysisFlow(promptData);
 }
 
-// Define the Genkit prompt
-export const prompt = ai.definePrompt({
+// Define the Genkit prompt (internal - DO NOT EXPORT)
+const prompt = ai.definePrompt({
   name: 'financialAnalysisPrompt',
   input: {
     schema: FinancialAnalysisPromptInputSchema, // Use the specific prompt input schema
@@ -207,9 +207,9 @@ Com base nos dados fornecidos, gere uma análise financeira detalhada no formato
 Seja claro, objetivo e use uma linguagem acessível para um pequeno empreendedor. Baseie TODA a análise **exclusivamente** nos dados fornecidos. Não invente informações. Se os dados forem insuficientes para alguma parte da análise, mencione isso explicitamente no texto correspondente (summary, analysis, assessment, recommendations).`,
 });
 
-// Define the Genkit flow
+// Define the Genkit flow (internal - DO NOT EXPORT)
 // Use the specific Prompt Input Schema and the full Output Schema
-export const financialAnalysisFlow = ai.defineFlow<
+const financialAnalysisFlow = ai.defineFlow<
     FinancialAnalysisPromptInput,
     FinancialAnalysisOutput
 >({
@@ -226,3 +226,4 @@ export const financialAnalysisFlow = ai.defineFlow<
         disclaimer: 'Esta análise é gerada por IA e baseada exclusivamente nos dados fornecidos (produtos, vendas, dívidas). É uma ferramenta de apoio e não substitui aconselhamento financeiro profissional.',
     };
 });
+
