@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Package, ShoppingCart, BarChart3, Wifi, WifiOff, Cloud, Upload, Download, Landmark, HandCoins } from "lucide-react"; // Added HandCoins for Debts
+import { Package, ShoppingCart, BarChart3, Wifi, WifiOff, Cloud, Upload, Download, Landmark, HandCoins, BrainCircuit } from "lucide-react"; // Added HandCoins for Debts, BrainCircuit for Insights
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useStore } from "@/store/store";
@@ -41,8 +41,9 @@ export default function AppHeader() {
   const getActiveTab = () => {
     if (pathname.startsWith("/produtos")) return "produtos";
     if (pathname.startsWith("/vendas")) return "vendas";
-    if (pathname.startsWith("/dividas")) return "dividas"; // Added debts tab
+    if (pathname.startsWith("/dividas")) return "dividas";
     if (pathname.startsWith("/relatorios")) return "relatorios";
+    if (pathname.startsWith("/insights")) return "insights"; // Added insights tab
     return "";
   };
 
@@ -108,7 +109,7 @@ export default function AppHeader() {
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center justify-between">
         <div className="flex items-center gap-4 md:gap-6">
-          <Link href="/" className="text-xl font-semibold text-primary-foreground mr-4"> {/* Added Link and margin */}
+          <Link href="/" className="text-lg font-semibold text-primary-foreground mr-4 whitespace-nowrap"> {/* Adjusted text size and wrap */}
             Vendas Tranquilas
           </Link>
           {/* Desktop Navigation */}
@@ -133,6 +134,12 @@ export default function AppHeader() {
               <TabsTrigger value="relatorios" asChild>
                 <Link href="/relatorios">
                   <BarChart3 className="mr-2 h-4 w-4" /> Relatórios
+                </Link>
+              </TabsTrigger>
+               {/* Insights Tab */}
+               <TabsTrigger value="insights" asChild>
+                <Link href="/insights">
+                  <BrainCircuit className="mr-2 h-4 w-4" /> Insights AI
                 </Link>
               </TabsTrigger>
             </TabsList>
@@ -242,8 +249,8 @@ export default function AppHeader() {
        {/* Mobile Navigation */}
       <div className="md:hidden border-t">
          <Tabs value={getActiveTab()} className="w-full p-1">
-            {/* Adjusted grid columns for 4 tabs */}
-            <TabsList className="grid w-full grid-cols-4 h-12">
+            {/* Adjusted grid columns for 5 tabs */}
+            <TabsList className="grid w-full grid-cols-5 h-12">
               <TabsTrigger value="produtos" asChild className="h-full">
                 <Link href="/produtos" className="flex flex-col items-center justify-center text-xs gap-1">
                   <Package className="h-4 w-4" /> Produtos
@@ -263,6 +270,12 @@ export default function AppHeader() {
               <TabsTrigger value="relatorios" asChild className="h-full">
                 <Link href="/relatorios" className="flex flex-col items-center justify-center text-xs gap-1">
                   <BarChart3 className="h-4 w-4" /> Relatórios
+                </Link>
+              </TabsTrigger>
+               {/* Mobile Insights Tab */}
+               <TabsTrigger value="insights" asChild className="h-full">
+                <Link href="/insights" className="flex flex-col items-center justify-center text-xs gap-1">
+                  <BrainCircuit className="h-4 w-4" /> Insights
                 </Link>
               </TabsTrigger>
             </TabsList>
