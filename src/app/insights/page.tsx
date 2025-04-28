@@ -37,7 +37,7 @@ import {
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/currency-utils';
 import { Badge } from '@/components/ui/badge';
-import { TooltipProvider } from "@/components/ui/tooltip"; // Ensure this import is correct
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 export default function InsightsPage() {
   const { products, sales, debts, currency } = useStore();
@@ -105,7 +105,6 @@ export default function InsightsPage() {
     }
   };
 
-  // Ensure no syntax errors before the return statement
   return (
     <TooltipProvider>
       <div className="container mx-auto p-4 space-y-6">
@@ -156,10 +155,12 @@ export default function InsightsPage() {
                 <span>Resultado da Análise</span>
                 <Badge
                   variant="outline"
-                  className={`border ${getStatusProps(analysisResult.overallStatus).color
-                    }`}
+                  className={`border ${getStatusProps(analysisResult.overallStatus).color}`}
                 >
-                  <getStatusProps(analysisResult.overallStatus).icon className="h-4 w-4 mr-1" />
+                  {(() => {
+                    const { icon: StatusIcon } = getStatusProps(analysisResult.overallStatus);
+                    return <StatusIcon className="h-4 w-4 mr-1" />;
+                  })()}
                   {getStatusProps(analysisResult.overallStatus).text}
                 </Badge>
               </CardTitle>

@@ -3,22 +3,22 @@
  * @fileOverview Provides AI-driven financial analysis and recommendations based on sales, product, and debt data.
  *
  * - analyzeFinances - Function to trigger the financial analysis flow.
- * - FinancialAnalysisInput - Input type for the analysis flow.
+ * - FinancialAnalysisInput - Input type for the analysis flow (used by the exported function).
  * - FinancialAnalysisOutput - Output type for the analysis flow.
  */
 
 import {ai} from '@/ai/ai-instance';
 import {z} from 'genkit';
-import {Product, Sale, Debt, calculateUnitCost} from '@/types'; // Import existing types
-import {getCurrencyConfig} from '@/config/currencies'; // Import currency config
+import {Product, Sale, Debt, calculateUnitCost} from '@/types';
+import {getCurrencyConfig} from '@/config/currencies';
 
-// Simplified Zod schemas for flow input (can be derived from existing types if needed)
+// Simplified Zod schemas for data types used in the application
 const ProductSchema = z.object({
   id: z.string(),
   name: z.string(),
   acquisitionValue: z.number(),
   quantity: z.number(),
-  initialQuantity: z.number().optional(),
+  initialQuantity: z.number().optional(), // Keep optional for flexibility if older data exists
   createdAt: z.string().datetime(),
 });
 
@@ -30,7 +30,7 @@ const SaleSchema = z.object({
   saleValue: z.number(),
   isLoss: z.boolean(),
   lossReason: z.string().optional(),
-  profit: z.number(),
+  profit: z.number(), // Profit can be negative for losses
   createdAt: z.string().datetime(),
 });
 
@@ -48,94 +48,79 @@ const DebtSchema = z.object({
   relatedSaleId: z.string().optional(),
 });
 
+// Input schema for the main exported function `analyzeFinances`
 export const FinancialAnalysisInputSchema = z.object({
-  products: z.array(ProductSchema).describe('List of products in inventory.'),
-  sales: z.array(SaleSchema).describe('List of sales and loss transactions.'),
-  debts: z.array(DebtSchema).describe('List of debts (receivables and payables).'),
-  currencyCode: z
-    .string()
-    .describe('The currency code (e.g., BRL, USD) used for financial values.'),
+  products: z.array(ProductSchema),
+  sales: z.array(SaleSchema),
+  debts: z.array(DebtSchema),
+  currencyCode: z.string(),
 });
-export type FinancialAnalysisInput = z.infer<
-  typeof FinancialAnalysisInputSchema
->;
+export type FinancialAnalysisInput = z.infer<typeof FinancialAnalysisInputSchema>;
 
+// Input schema specifically for the AI prompt (includes calculated values)
+const FinancialAnalysisPromptInputSchema = z.object({
+  products: z.array(ProductSchema),
+  sales: z.array(SaleSchema),
+  debts: z.array(DebtSchema),
+  currencySymbol: z.string(),
+  currencyCode: z.string(),
+  calculated: z.object({
+    approxAssets: z.number(),
+    approxLiabilities: z.number(),
+    approxNetWorth: z.number(),
+    totalReceivablesPending: z.number(),
+    totalPayablesPending: z.number(),
+  }),
+});
+type FinancialAnalysisPromptInput = z.infer<typeof FinancialAnalysisPromptInputSchema>;
+
+
+// Output schema for both the flow and the exported function
 export const FinancialAnalysisOutputSchema = z.object({
   balanceSheetSummary: z.object({
-    approxAssets: z
-      .number()
-      .describe(
-        'Valor aproximado dos ativos (valor atual do estoque baseado no custo unitário).'
-      ),
-    approxLiabilities: z
-      .number()
-      .describe(
-        'Valor aproximado dos passivos (total de dívidas a pagar pendentes).'
-      ),
-    approxNetWorth: z
-      .number()
-      .describe('Patrimônio líquido aproximado (Ativos - Passivos).'),
-    summary: z.string().describe('Breve resumo da situação patrimonial.'),
+    approxAssets: z.number().describe('Estimated total value of assets, primarily current stock value.'),
+    approxLiabilities: z.number().describe('Estimated total value of pending liabilities (debts to pay).'),
+    approxNetWorth: z.number().describe('Estimated net worth (Assets - Liabilities).'),
+    summary: z.string().describe('A brief textual summary of the balance sheet situation.'),
   }),
   debtAnalysis: z.object({
-    totalReceivablesPending: z
-      .number()
-      .describe('Valor total pendente a receber.'),
-    totalPayablesPending: z.number().describe('Valor total pendente a pagar.'),
-    analysis: z
-      .string()
-      .describe('Análise da situação das dívidas e potenciais problemas.'),
+    totalReceivablesPending: z.number().describe('Total amount pending to be received from customers/debtors.'),
+    totalPayablesPending: z.number().describe('Total amount pending to be paid to suppliers/creditors.'),
+    analysis: z.string().describe('Textual analysis of the debt situation, including cash flow implications.'),
   }),
   riskAssessment: z.object({
-    identifiedRisks: z
-      .array(z.string())
-      .describe(
-        'Lista de riscos identificados (baseados em perdas, dívidas altas, baixo lucro, etc.).'
-      ),
-    assessment: z
-      .string()
-      .describe('Avaliação geral dos riscos para o negócio.'),
+    identifiedRisks: z.array(z.string()).describe('A list of potential financial or operational risks identified from the data.'),
+    assessment: z.string().describe('Overall assessment of the risk level (e.g., low, moderate, high).'),
   }),
   recommendations: z.object({
-    suggestions: z
-      .array(z.string())
-      .describe('Lista de recomendações acionáveis para melhorar a saúde financeira.'),
-    priorities: z
-      .string()
-      .describe('Sugestão de prioridades ou próximos passos.'),
+    suggestions: z.array(z.string()).describe('Actionable suggestions for improvement based on the analysis.'),
+    priorities: z.string().describe('Indication of which recommendations should be prioritized.'),
   }),
-  overallStatus: z
-    .enum(['healthy', 'needs_attention', 'critical'])
-    .describe('Classificação geral da saúde financeira.'),
-  disclaimer: z
-    .string()
-    .describe(
-      'Aviso legal informando que a análise é baseada nos dados fornecidos e é uma aproximação.'
-    ),
+  overallStatus: z.enum(['healthy', 'needs_attention', 'critical']).describe('Overall financial health status.'),
+  disclaimer: z.string().describe('Standard disclaimer about the AI-generated nature of the analysis.'),
 });
-export type FinancialAnalysisOutput = z.infer<
-  typeof FinancialAnalysisOutputSchema
->;
+export type FinancialAnalysisOutput = z.infer<typeof FinancialAnalysisOutputSchema>;
 
+
+/**
+ * Prepares data and calls the Genkit flow for financial analysis.
+ * @param input - The raw product, sale, and debt data along with currency code.
+ * @returns A promise that resolves to the financial analysis output.
+ */
 export async function analyzeFinances(
   input: FinancialAnalysisInput
 ): Promise<FinancialAnalysisOutput> {
-  // Pre-calculate some values to potentially help the LLM or reduce token usage if complex
   const currencyConfig = getCurrencyConfig(input.currencyCode);
   const currencySymbol = currencyConfig?.symbol || input.currencyCode;
 
-  // Note: The current report calculation in the store already does much of this.
-  // We can pass those results or let the LLM derive them from raw data.
-  // For simplicity here, we pass raw data and let the LLM perform the analysis based on instructions.
-
-  // Calculate current stock value (Assets approximation)
+  // Calculate approximate asset value (current stock value)
   const approxAssets = input.products.reduce((total, product) => {
-    const {cost: unitCost} = calculateUnitCost(product);
-    const currentValue = unitCost * product.quantity;
-    return total + currentValue;
+    const { cost: unitCost } = calculateUnitCost(product);
+    // Use current quantity for stock value
+    return total + (unitCost * product.quantity);
   }, 0);
 
-  // Calculate pending payables (Liabilities approximation)
+  // Calculate approximate liabilities (pending payables)
   const approxLiabilities = input.debts.reduce((sum, debt) => {
     if (debt.type === 'payable' && debt.status !== 'paid') {
       return sum + (debt.amount - debt.amountPaid);
@@ -145,6 +130,7 @@ export async function analyzeFinances(
 
   const approxNetWorth = approxAssets - approxLiabilities;
 
+  // Calculate total pending receivables
   const totalReceivablesPending = input.debts.reduce((sum, debt) => {
     if (debt.type === 'receivable' && debt.status !== 'paid') {
       return sum + (debt.amount - debt.amountPaid);
@@ -152,95 +138,91 @@ export async function analyzeFinances(
     return sum;
   }, 0);
 
-  // Prepare data for the prompt (consider stringifying large arrays if needed)
-  const promptData = {
+  // Prepare data for the prompt, including calculated values
+  const promptData: FinancialAnalysisPromptInput = {
     products: input.products,
     sales: input.sales,
     debts: input.debts,
-    currencySymbol: currencySymbol,
+    currencySymbol,
     currencyCode: input.currencyCode,
     calculated: {
-      // Pass pre-calculated values to help the LLM
       approxAssets,
-      approxLiabilities,
+      approxLiabilities, // This is totalPayablesPending
       approxNetWorth,
       totalReceivablesPending,
-      totalPayablesPending: approxLiabilities, // Same calculation
+      totalPayablesPending: approxLiabilities, // Reuse calculated liabilities
     },
   };
 
-  const analysisResult = await financialAnalysisFlow(promptData);
-
-  // Ensure the disclaimer is always added server-side for safety
-  analysisResult.disclaimer =
-    'Esta análise é gerada por IA e baseada exclusivamente nos dados fornecidos (produtos, vendas, dívidas). É uma ferramenta de apoio e não substitui aconselhamento financeiro profissional.';
-
-  return analysisResult;
+  // Call the Genkit flow
+  return financialAnalysisFlow(promptData);
 }
 
-const prompt = ai.definePrompt({
+// Define the Genkit prompt
+export const prompt = ai.definePrompt({
   name: 'financialAnalysisPrompt',
   input: {
-    schema: z.object({
-      products: z.array(ProductSchema),
-      sales: z.array(SaleSchema),
-      debts: z.array(DebtSchema),
-      currencySymbol: z.string(),
-      currencyCode: z.string(),
-      calculated: z.object({
-        approxAssets: z.number(),
-        approxLiabilities: z.number(),
-        approxNetWorth: z.number(),
-        totalReceivablesPending: z.number(),
-        totalPayablesPending: z.number(),
-      }),
-    }),
+    schema: FinancialAnalysisPromptInputSchema, // Use the specific prompt input schema
   },
   output: {
-    schema: FinancialAnalysisOutputSchema.omit({disclaimer: true}), // AI doesn't generate disclaimer
+     // Define the expected output structure for the prompt (excluding the disclaimer)
+    schema: FinancialAnalysisOutputSchema.omit({disclaimer: true}),
   },
   prompt: `Você é um consultor financeiro especialista em pequenos negócios. Analise os dados financeiros fornecidos para a aplicação "Vendas Tranquilas".
 
 Dados Fornecidos:
 - Moeda: {{{currencyCode}}} (Símbolo: {{{currencySymbol}}})
-- Produtos (Estoque): {{json products}}
+- Produtos (Estoque Atual): {{json products}}
 - Transações (Vendas e Perdas): {{json sales}}
 - Dívidas (A Receber e A Pagar): {{json debts}}
-- Cálculos Prévios: {{json calculated}}
+- Cálculos Prévios (Aproximados): {{json calculated}}
+  - approxAssets: Valor estimado do estoque atual.
+  - approxLiabilities: Total de dívidas a pagar pendentes.
+  - approxNetWorth: Patrimônio líquido estimado (Ativos - Passivos).
+  - totalReceivablesPending: Total de dívidas a receber pendentes.
+  - totalPayablesPending: Total de dívidas a pagar pendentes (igual a approxLiabilities).
 
 Sua Tarefa:
-Com base nos dados fornecidos, gere uma análise financeira detalhada no formato JSON especificado. Siga estritamente a estrutura de saída definida.
+Com base nos dados fornecidos, gere uma análise financeira detalhada no formato JSON especificado. Siga estritamente a estrutura de saída definida (omitindo o campo 'disclaimer').
 
-1.  **Resumo Patrimonial (Balance Sheet Summary):**
-    *   Use os valores pré-calculados para ativos (estoque), passivos (dívidas a pagar) e patrimônio líquido.
-    *   Escreva um breve resumo da situação, indicando se o patrimônio é positivo ou negativo e o que isso significa de forma simples.
+1.  **Resumo Patrimonial (balanceSheetSummary):**
+    *   Use os valores pré-calculados para 'approxAssets', 'approxLiabilities', e 'approxNetWorth'.
+    *   Escreva um 'summary' breve da situação, indicando se o patrimônio é positivo ou negativo e o que isso significa de forma simples.
 
-2.  **Análise de Dívidas (Debt Analysis):**
-    *   Use os valores pré-calculados para totais a receber e a pagar pendentes.
-    *   Analise a proporção entre contas a receber e a pagar. Há risco de fluxo de caixa? Comente sobre a saúde das dívidas.
+2.  **Análise de Dívidas (debtAnalysis):**
+    *   Use os valores pré-calculados 'totalReceivablesPending' e 'totalPayablesPending'.
+    *   Analise a proporção entre contas a receber e a pagar no campo 'analysis'. Há risco de fluxo de caixa? Comente sobre a saúde das dívidas.
 
-3.  **Avaliação de Riscos (Risk Assessment):**
-    *   Identifique os principais riscos com base nos dados. Exemplos: alto volume de perdas em produtos específicos, lucro baixo ou negativo, dívidas a pagar muito altas comparadas às a receber, estoque parado (produtos sem vendas recentes - inferir se possível), dependência de poucos produtos rentáveis.
-    *   Forneça uma avaliação geral (ex: baixo, moderado, alto risco).
+3.  **Avaliação de Riscos (riskAssessment):**
+    *   Identifique os principais riscos ('identifiedRisks') com base nos dados. Exemplos: alto volume de perdas em produtos específicos, lucro baixo ou negativo, dívidas a pagar muito altas comparadas às a receber, estoque parado (produtos sem vendas recentes - inferir se possível), dependência de poucos produtos rentáveis.
+    *   Forneça uma 'assessment' geral (ex: baixo, moderado, alto risco).
 
-4.  **Recomendações (Recommendations):**
-    *   Sugira ações concretas e práticas para o usuário. Exemplos: renegociar dívidas a pagar, focar em produtos mais rentáveis, estratégias para reduzir perdas, promoções para limpar estoque parado, melhorar controle de contas a receber.
-    *   Indique quais ações seriam mais prioritárias.
+4.  **Recomendações (recommendations):**
+    *   Sugira ações concretas e práticas ('suggestions') para o usuário. Exemplos: renegociar dívidas a pagar, focar em produtos mais rentáveis, estratégias para reduzir perdas, promoções para limpar estoque parado, melhorar controle de contas a receber.
+    *   Indique quais ações seriam mais prioritárias em 'priorities'.
 
-5.  **Status Geral (Overall Status):**
+5.  **Status Geral (overallStatus):**
     *   Classifique a saúde financeira geral como 'healthy', 'needs_attention', ou 'critical'.
 
-Seja claro, objetivo e use uma linguagem acessível para um pequeno empreendedor. Baseie TODA a análise **exclusivamente** nos dados fornecidos. Não invente informações. Se os dados forem insuficientes para alguma parte da análise, mencione isso.`,
+Seja claro, objetivo e use uma linguagem acessível para um pequeno empreendedor. Baseie TODA a análise **exclusivamente** nos dados fornecidos. Não invente informações. Se os dados forem insuficientes para alguma parte da análise, mencione isso explicitamente no texto correspondente (summary, analysis, assessment, recommendations).`,
 });
 
-const financialAnalysisFlow = ai.defineFlow(
-  {
+// Define the Genkit flow
+// Use the specific Prompt Input Schema and the full Output Schema
+export const financialAnalysisFlow = ai.defineFlow<
+    FinancialAnalysisPromptInput,
+    FinancialAnalysisOutput
+>({
     name: 'financialAnalysisFlow',
-    inputSchema: prompt.inputSchema!, // Use the prompt's input schema
-    outputSchema: FinancialAnalysisOutputSchema.omit({disclaimer: true}), // Match prompt output
-  },
-  async input => {
-    const {output} = await prompt(input);
-    return output!; // Assuming output is guaranteed based on schema request
-  }
-);
+    inputSchema: FinancialAnalysisPromptInputSchema, // Reference the specific prompt input schema
+    outputSchema: FinancialAnalysisOutputSchema,     // Reference the full output schema
+}, async (input) => {
+    // Call the prompt with the prepared input data
+    const { output } = await prompt(input);
+
+    // Combine the AI output with the standard disclaimer
+    return {
+        ...output!, // Use non-null assertion as output is expected based on schema
+        disclaimer: 'Esta análise é gerada por IA e baseada exclusivamente nos dados fornecidos (produtos, vendas, dívidas). É uma ferramenta de apoio e não substitui aconselhamento financeiro profissional.',
+    };
+});
