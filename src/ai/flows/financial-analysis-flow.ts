@@ -84,7 +84,7 @@ const prompt = ai.definePrompt({
      // Define the expected output structure for the prompt (excluding the disclaimer)
     schema: FinancialAnalysisOutputSchema.omit({disclaimer: true}),
   },
-  prompt: `Você é um consultor financeiro especialista em pequenos negócios. Analise os dados financeiros fornecidos para a aplicação "Vendas Tranquilas".
+  prompt: `Você é um consultor financeiro especialista em pequenos negócios. Analise os dados financeiros fornecidos.
 
 Dados Fornecidos:
 - Moeda: {{{currencyCode}}} (Símbolo: {{{currencySymbol}}})
