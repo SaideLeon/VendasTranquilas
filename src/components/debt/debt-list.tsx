@@ -267,11 +267,11 @@ export default function DebtList({ title, debts, onEdit, onDelete, onViewDetails
                             <Edit className="h-4 w-4" />
                           </Button>
                           <AlertDialog open={debtToDelete?.id === debt.id} onOpenChange={(open) => !open && setDebtToDelete(null)}>
-                            <AlertDialogTrigger asChild>
+                            <AlertDialogTitle asChild>
                               <Button variant="destructive" size="icon" onClick={() => handleDeleteClick(debt)} aria-label={`Excluir ${debt.description}`}>
                                 <Trash2 className="h-4 w-4" />
                               </Button>
-                            </AlertDialogTrigger>
+                            </AlertDialogTitle>
                             <AlertDialogContent>
                               <AlertDialogHeader>
                                 <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
