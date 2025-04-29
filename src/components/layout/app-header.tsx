@@ -29,6 +29,7 @@ import { handleExport, handleImport } from '@/lib/data-utils';
 import { useToast } from "@/hooks/use-toast";
 import React, { useRef } from "react";
 import { SUPPORTED_CURRENCIES, getCurrencyConfig } from "@/config/currencies";
+import { Database } from 'lucide-react';
 
 
 export default function AppHeader() {
@@ -109,8 +110,8 @@ export default function AppHeader() {
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center justify-between">
         <div className="flex items-center gap-4 md:gap-6">
-          <Link href="/" className="text-lg font-semibold text-primary-foreground mr-4 whitespace-nowrap"> {/* Adjusted text size and wrap */}
-            Vendas Tranquilas
+          <Link href="/" className="text-lg ml-2 font-semibold text-primary-foreground mr-4 whitespace-nowrap"> {/* Adjusted text size and wrap */}
+            Dyfinzo
           </Link>
           {/* Desktop Navigation */}
           <Tabs value={getActiveTab()} className="hidden md:block">
@@ -222,7 +223,7 @@ export default function AppHeader() {
              <Tooltip>
                <TooltipTrigger asChild>
                  <Button variant="ghost" size="icon">
-                   {isDatabaseConnected ? <Landmark className="h-5 w-5 text-green-600" /> : <Landmark className="h-5 w-5 text-red-600 rotate-45" />}
+                   {isDatabaseConnected ? <Database className="h-5 w-5 text-green-600" /> : <Database className="h-5 w-5 text-red-600 rotate-45" />}
                    <span className="sr-only">{isDatabaseConnected ? "Conectado" : "Desconectado"}</span>
                  </Button>
                </TooltipTrigger>
