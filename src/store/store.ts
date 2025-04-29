@@ -1,9 +1,23 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import type { Product, Sale, ReportData, Debt, DebtType, DebtStatus } from '@/types'; // Import Debt types
-import { calculateUnitCost } from '@/types'; // Import the helper
+import type { Product, Sale, ReportData, Debt } from '@/types';
+import { calculateUnitCost } from '@/types'; // Assuming this helper stays in types
 import { v4 as uuidv4 } from 'uuid';
 import { DEFAULT_CURRENCY_CODE } from '@/config/currencies';
+import {
+  getProducts as dbGetProducts,
+  addProduct as dbAddProduct,
+  updateProduct as dbUpdateProduct,
+  deleteProduct as dbDeleteProduct,
+  getSales as dbGetSales,
+  addSale as dbAddSale,
+  deleteSale as dbDeleteSale,
+  getDebts as dbGetDebts,
+  addDebt as dbAddDebt,
+  updateDebt as dbUpdateDebt,
+  deleteDebt as dbDeleteDebt,
+  checkDbConnection
+} from '@/app/actions'; // Import DB actions
 
 interface AppState {
   products: Product[];
@@ -11,35 +25,56 @@ interface AppState {
   debts: Debt[]; // Added debts state
   lastSync: Date | null;
   isOnline: boolean;
-  currency: string; // ISO 4217 currency code (e.g., 'BRL', 'USD')
+  currency: string; // ISO 4217 currency code
+  isDatabaseConnected: boolean; // Database connection status
+  isLoading: boolean; // Loading state for async operations
+  error: string | null; // To store potential errors
+
+  // Core actions
+  initializeData: () => Promise<void>; // Fetch initial data from DB
+  setIsDatabaseConnected: (status: boolean) => void;
   setIsOnline: (status: boolean) => void;
   setCurrency: (currencyCode: string) => void;
-  addProduct: (productData: Omit<Product, 'id' | 'createdAt'>) => Product; // Adjusted onSubmit in form handles initialQuantity
-  updateProduct: (product: Product) => void;
-  deleteProduct: (productId: string) => void;
-  getProductById: (productId: string) => Product | undefined;
-  addSale: (saleData: Omit<Sale, 'id' | 'profit' | 'productName' | 'createdAt'>) => Sale | null;
-  deleteSale: (saleId: string) => void;
-  addDebt: (debtData: Omit<Debt, 'id' | 'createdAt' | 'status' | 'amountPaid'>) => Debt; // Add new debt
-  updateDebt: (debtId: string, updates: Partial<Omit<Debt, 'id' | 'createdAt'>>) => void; // Update debt (status, amountPaid, etc.)
-  deleteDebt: (debtId: string) => void; // Delete debt
-  getDebtById: (debtId: string) => Debt | undefined;
-  getSalesReportData: () => ReportData; // Report data structure might not need currency itself, but relies on values assumed to be in the selected currency
+  setError: (error: string | null) => void;
+
+  // Product actions
+  addProduct: (productData: Omit<Product, 'id' | 'createdAt'>) => Promise<Product | null>;
+  updateProduct: (product: Product) => Promise<Product | null>;
+  deleteProduct: (productId: string) => Promise<void>;
+  getProductById: (productId: string) => Product | undefined; // Make sync
+
+  // Sale actions
+  addSale: (saleData: Omit<Sale, 'id' | 'profit' | 'productName' | 'createdAt'>) => Promise<Sale | null>;
+  deleteSale: (saleId: string) => Promise<void>;
+  getSaleById: (saleId: string) => Sale | undefined; // Make sync
+
+  // Debt actions
+  addDebt: (debtData: Omit<Debt, 'id' | 'createdAt' | 'status' | 'amountPaid'>) => Promise<Debt | null>;
+  updateDebt: (debtId: string, updates: Partial<Omit<Debt, 'id' | 'createdAt'>>) => Promise<Debt | null>;
+  deleteDebt: (debtId: string) => Promise<void>;
+  getDebtById: (debtId: string) => Debt | undefined; // Make sync
+
+  // Reporting
+  getSalesReportData: () => ReportData;
+
+  // Store hydration/backup helpers (might not be needed with DB)
   setProducts: (products: Product[]) => void;
   setSales: (sales: Sale[]) => void;
-  setDebts: (debts: Debt[]) => void; // Setter for import/export
+  setDebts: (debts: Debt[]) => void;
   setLastSync: (date: Date | null) => void;
-  // Simulate sync function
+
+  // Sync function (placeholder or could trigger background tasks)
   syncData: () => Promise<void>;
+
+  // DB Connection Check
+  checkDatabaseConnection: () => Promise<void>; // Keep this separate
 }
 
+
 // Helper function to calculate reports
-// Values are assumed to be in the globally selected currency.
-const calculateReports = (products: Product[], sales: Sale[], debts: Debt[]): ReportData => { // Add debts parameter
-    // Calculate total investment based on current stock and unit cost
+const calculateReports = (products: Product[], sales: Sale[], debts: Debt[]): ReportData => {
     const totalInvestment = products.reduce((total, product) => {
         const { cost: unitCost } = calculateUnitCost(product);
-        // Use current quantity for stock value calculation
         const currentValue = unitCost * product.quantity;
         return total + currentValue;
     }, 0);
@@ -49,56 +84,48 @@ const calculateReports = (products: Product[], sales: Sale[], debts: Debt[]): Re
     let totalLossValue = 0;
     const productProfits: { [key: string]: { name: string, profit: number, lossValue: number } } = {};
 
-    // Initialize product profits/losses map
     products.forEach(p => {
         productProfits[p.id] = { name: p.name, profit: 0, lossValue: 0 };
     });
 
-    // Calculate revenue, profit, and loss from sales records
     sales.forEach(s => {
-         const product = products.find(p => p.id === s.productId);
-         const { cost: unitCost } = calculateUnitCost(product); // Get unit cost
+        const product = products.find(p => p.id === s.productId);
+        const { cost: unitCost } = calculateUnitCost(product);
 
-         // Revenue only counts for non-loss sales
-         if (!s.isLoss) {
-             totalRevenue += s.saleValue;
-         }
+        if (!s.isLoss) {
+            totalRevenue += s.saleValue;
+        }
 
-         // Profit calculation considers unit cost
-         if (s.isLoss) {
-             const lossAmount = unitCost * s.quantitySold; // Loss value is based on unit cost
-             totalLossValue += lossAmount;
-             totalProfit -= lossAmount; // Losses reduce total profit
-             if (productProfits[s.productId]) {
-                 productProfits[s.productId].lossValue += lossAmount;
-                 productProfits[s.productId].profit -= lossAmount; // Loss reduces product-specific profit
-             }
-         } else {
-             // Profit from a normal sale = sale value - cost of goods sold
-             const costOfGoodsSold = unitCost * s.quantitySold;
-             const saleProfit = s.saleValue - costOfGoodsSold;
-             totalProfit += saleProfit;
-             if (productProfits[s.productId]) {
-                 productProfits[s.productId].profit += saleProfit;
-             }
-         }
+        if (s.isLoss) {
+            const lossAmount = unitCost * s.quantitySold;
+            totalLossValue += lossAmount;
+            totalProfit -= lossAmount;
+            if (productProfits[s.productId]) {
+                productProfits[s.productId].lossValue += lossAmount;
+                productProfits[s.productId].profit -= lossAmount;
+            }
+        } else {
+            const costOfGoodsSold = unitCost * s.quantitySold;
+            const saleProfit = s.saleValue - costOfGoodsSold;
+            totalProfit += saleProfit;
+            if (productProfits[s.productId]) {
+                productProfits[s.productId].profit += saleProfit;
+            }
+        }
     });
 
     let mostProfitableProduct: { name: string; profit: number } | null = null;
     let highestLossProduct: { name: string; lossValue: number } | null = null;
 
     Object.values(productProfits).forEach(data => {
-        // Find most profitable (must have positive profit)
         if (data.profit > 0 && (!mostProfitableProduct || data.profit > mostProfitableProduct.profit)) {
             mostProfitableProduct = { name: data.name, profit: data.profit };
         }
-         // Find highest loss (must have positive loss value accumulated)
-         if (data.lossValue > 0 && (!highestLossProduct || data.lossValue > highestLossProduct.lossValue)) {
-             highestLossProduct = { name: data.name, lossValue: data.lossValue };
+        if (data.lossValue > 0 && (!highestLossProduct || data.lossValue > highestLossProduct.lossValue)) {
+            highestLossProduct = { name: data.name, lossValue: data.lossValue };
         }
     });
 
-     // Calculate pending debts
     const totalReceivablesPending = debts.reduce((sum, debt) => {
         if (debt.type === 'receivable' && debt.status !== 'paid') {
             return sum + (debt.amount - debt.amountPaid);
@@ -113,273 +140,423 @@ const calculateReports = (products: Product[], sales: Sale[], debts: Debt[]): Re
         return sum;
     }, 0);
 
-
     return {
         totalProducts: products.length,
         totalSales: sales.length,
-        totalInvestment, // Based on current stock value using unit cost
+        totalInvestment,
         totalRevenue,
-        totalProfit, // Net profit after considering COGS and losses
-        totalLossValue, // Total cost of items marked as loss
+        totalProfit,
+        totalLossValue,
         mostProfitableProduct,
         highestLossProduct,
-        totalReceivablesPending, // Added
-        totalPayablesPending, // Added
+        totalReceivablesPending,
+        totalPayablesPending,
     };
 };
 
+
 export const useStore = create<AppState>()(
-  persist(
-    (set, get) => ({
-      products: [],
-      sales: [],
-      debts: [], // Initialize debts state
-      lastSync: null,
-      isOnline: typeof navigator !== 'undefined' ? navigator.onLine : true, // Initial online status
-      currency: DEFAULT_CURRENCY_CODE, // Initialize with default currency
+    persist(
+        (set, get) => ({
+            products: [],
+            sales: [],
+            debts: [],
+            lastSync: null,
+            isOnline: typeof navigator !== 'undefined' ? navigator.onLine : true,
+            currency: DEFAULT_CURRENCY_CODE,
+            isDatabaseConnected: false,
+            isLoading: false,
+            error: null,
 
-       setIsOnline: (status) => set({ isOnline: status }),
-       setCurrency: (currencyCode) => set({ currency: currencyCode }),
+            setError: (error) => set({ error }),
 
-      addProduct: (productData) => {
-        // Expects { name, acquisitionValue, quantity }
-        // The `initialQuantity` is set based on the `quantity` provided for a *new* product.
-        const newProduct: Product = {
-            id: uuidv4(),
-            name: productData.name,
-            acquisitionValue: productData.acquisitionValue,
-            quantity: productData.quantity, // Current quantity is the initial quantity
-            initialQuantity: productData.quantity, // Set initialQuantity explicitly
-            createdAt: new Date().toISOString(),
-        };
-        set((state) => ({ products: [...state.products, newProduct] }));
-        get().syncData().catch(err => console.warn("Background sync failed:", err));
-        return newProduct;
-    },
+            setIsDatabaseConnected: (status) => set({ isDatabaseConnected: status }),
 
-      updateProduct: (updatedProduct) => {
-        // When updating, acquisitionValue or quantity might change.
-        // initialQuantity should typically NOT be changed here unless it's a specific correction.
-        // The calculateUnitCost function will use initialQuantity if available.
-        set((state) => ({
-          products: state.products.map((p) =>
-            p.id === updatedProduct.id ? { ...p, ...updatedProduct } : p // Merge updates, preserving existing initialQuantity
-         ),
-        }));
-        get().syncData().catch(err => console.warn("Background sync failed:", err));
-      },
+            setIsOnline: (status) => {
+                set({ isOnline: status });
+                if (status && get().isDatabaseConnected) {
+                    console.log("Became online. Attempting to sync...");
+                    get().syncData().catch(err => console.warn("Background sync failed:", err));
+                } else if (!status) {
+                    console.log("Became offline.");
+                }
+            },
 
-       deleteProduct: (productId) => {
-         const productToDelete = get().products.find(p => p.id === productId);
-         if (!productToDelete) return;
+            setCurrency: (currencyCode) => set({ currency: currencyCode }),
 
-        set((state) => ({
-          products: state.products.filter((p) => p.id !== productId),
-          sales: state.sales.filter((s) => s.productId !== productId), // Remove sales related to the deleted product
-          // Consider how to handle debts related to deleted products (e.g., archive or delete?)
-          // For simplicity, we'll leave debts for now. A real app might need more complex logic.
-        }));
-         get().syncData().catch(err => console.warn("Background sync failed:", err));
-      },
+            initializeData: async () => {
+                console.log("Initializing data from database...");
+                set({ isLoading: true, error: null });
+                try {
+                    await get().checkDatabaseConnection(); // Check connection first
+                    if (!get().isDatabaseConnected) {
+                        throw new Error("Database not connected. Cannot initialize.");
+                    }
+                    const [products, sales, debts] = await Promise.all([
+                        dbGetProducts(),
+                        dbGetSales(),
+                        dbGetDebts(),
+                    ]);
+                    set({
+                        products: products || [],
+                        sales: sales || [],
+                        debts: debts || [],
+                        isLoading: false,
+                        lastSync: new Date(),
+                    });
+                     console.log("Data initialized successfully.");
+                } catch (error: any) {
+                    console.error("Failed to initialize data:", error);
+                    set({ isLoading: false, error: `Failed to fetch initial data: ${error.message}` });
+                    // Optionally, attempt to load from localStorage as fallback?
+                }
+            },
 
-       getProductById: (productId) => {
-           return get().products.find(p => p.id === productId);
-       },
+            addProduct: async (productData) => {
+                 if (!get().isDatabaseConnected) {
+                    set({ error: "Database not connected. Cannot add product." });
+                    return null;
+                 }
+                set({ isLoading: true, error: null });
+                try {
+                    // Pass data to server action, which handles ID generation etc.
+                    const savedProduct = await dbAddProduct(productData);
+
+                    if (!savedProduct) throw new Error("Failed to save product to database.");
+
+                    // Replace temp data with saved data from DB (especially if ID changed)
+                    // Or just refetch all products for simplicity? Let's refetch for now.
+                     await get().initializeData(); // Refetch to ensure consistency
+                     set({ isLoading: false });
+                    return savedProduct; // Return the product saved in DB
+                } catch (error: any) {
+                    console.error("Failed to add product:", error);
+                    // Revert optimistic update if it failed (if implemented)
+                     set({ isLoading: false, error: `Failed to add product: ${error.message}` });
+                    return null;
+                }
+            },
+
+            updateProduct: async (product) => {
+                 if (!get().isDatabaseConnected) {
+                     set({ error: "Database not connected. Cannot update product." });
+                     return null;
+                 }
+                set({ isLoading: true, error: null });
+                const originalProducts = get().products; // Backup for potential revert
+                try {
+                    // Optimistic UI update (optional)
+                    // set((state) => ({
+                    //   products: state.products.map((p) => (p.id === product.id ? product : p)),
+                    // }));
+
+                    const updatedProduct = await dbUpdateProduct(product);
+                    if (!updatedProduct) throw new Error("Failed to update product in database.");
+
+                    // Refetch for consistency
+                    await get().initializeData();
+                     set({ isLoading: false });
+                    return updatedProduct;
+                } catch (error: any) {
+                    console.error("Failed to update product:", error);
+                    // Revert optimistic update (if implemented)
+                    // set({ products: originalProducts });
+                     set({ isLoading: false, error: `Failed to update product: ${error.message}` });
+                    return null;
+                }
+            },
+
+            deleteProduct: async (productId) => {
+                 if (!get().isDatabaseConnected) {
+                     set({ error: "Database not connected. Cannot delete product." });
+                     return;
+                 }
+                set({ isLoading: true, error: null });
+                const originalProducts = get().products;
+                const originalSales = get().sales;
+                 const originalDebts = get().debts; // Also handle debts
+                try {
+                    // Optimistic UI update (optional)
+                    // set((state) => ({
+                    //     products: state.products.filter((p) => p.id !== productId),
+                    //     sales: state.sales.filter((s) => s.productId !== productId), // Also remove related sales
+                    //     debts: state.debts.filter(d => !d.relatedSaleId || !state.sales.find(s => s.id === d.relatedSaleId && s.productId === productId)), // Complex logic for related debts might be needed
+                    // }));
+
+                    await dbDeleteProduct(productId); // Assume this also handles related sales/debts in DB via cascade or triggers
+
+                    // Refetch for consistency
+                    await get().initializeData();
+                    set({ isLoading: false });
+                } catch (error: any) {
+                    console.error("Failed to delete product:", error);
+                    // Revert optimistic update (if implemented)
+                    // set({ products: originalProducts, sales: originalSales, debts: originalDebts });
+                     set({ isLoading: false, error: `Failed to delete product: ${error.message}` });
+                }
+            },
+
+             // Use local state for immediate access, DB is source of truth
+             getProductById: (productId) => get().products.find(p => p.id === productId),
+             getSaleById: (saleId) => get().sales.find(s => s.id === saleId),
+             getDebtById: (debtId) => get().debts.find(d => d.id === debtId),
 
 
-      addSale: (saleData) => {
-        const product = get().getProductById(saleData.productId);
-        if (!product) {
-          console.error("Product not found for sale:", saleData.productId);
-          return null;
-        }
-        // Check against current quantity (product.quantity)
-        if (product.quantity < saleData.quantitySold) { // Strict check: cannot sell/lose more than available
-             console.error("Insufficient stock for sale/loss:", saleData.productId, "Available:", product.quantity, "Requested:", saleData.quantitySold);
-             // Throw an error or return null to indicate failure
-             throw new Error("Quantidade em estoque insuficiente.");
-             // return null;
-        }
+            addSale: async (saleData) => {
+                 if (!get().isDatabaseConnected) {
+                     set({ error: "Database not connected. Cannot add sale." });
+                     return null;
+                 }
+                const product = get().getProductById(saleData.productId);
+                if (!product) {
+                    set({ error: "Product not found for sale." });
+                    return null;
+                }
+                if (product.quantity < saleData.quantitySold) {
+                    set({ error: "Insufficient stock for sale/loss." });
+                    return null;
+                }
 
-         const { cost: unitCost } = calculateUnitCost(product); // Calculate unit cost using the helper
+                set({ isLoading: true, error: null });
+                try {
+                    // Pass raw sale data to server action
+                    const savedSale = await dbAddSale(saleData); // Server action calculates profit, gets product name, updates stock
 
-         // Calculate profit based on unit cost
-         const profit = saleData.isLoss
-             ? -(unitCost * saleData.quantitySold) // If loss, profit is negative unit cost * quantity
-             : saleData.saleValue - (unitCost * saleData.quantitySold); // Profit = Sale Value - Cost of Goods Sold
+                    if (!savedSale) throw new Error("Failed to save sale to database.");
 
-        const newSale: Sale = {
-          ...saleData,
-          id: uuidv4(),
-          productName: product.name,
-          profit: profit, // Use the calculated profit
-          createdAt: new Date().toISOString(),
-        };
+                    // Refetch for consistency
+                    await get().initializeData();
+                     set({ isLoading: false });
+                    return savedSale;
+                } catch (error: any) {
+                    console.error("Failed to add sale:", error);
+                     set({ isLoading: false, error: `Failed to add sale: ${error.message}` });
+                    return null;
+                }
+            },
 
-         // Update product's current quantity
-         const updatedProducts = get().products.map(p =>
-             p.id === saleData.productId
-                 ? { ...p, quantity: p.quantity - saleData.quantitySold } // Update current quantity
-                 : p
-         );
+            deleteSale: async (saleId) => {
+                 if (!get().isDatabaseConnected) {
+                     set({ error: "Database not connected. Cannot delete sale." });
+                     return;
+                 }
+                set({ isLoading: true, error: null });
+                 const saleToDelete = get().getSaleById(saleId);
+                 if (!saleToDelete) {
+                     set({ isLoading: false, error: "Sale not found." });
+                     return;
+                 }
+                try {
+                    // DB action should handle restoring product quantity
+                    await dbDeleteSale(saleId);
+
+                    // Refetch for consistency
+                    await get().initializeData();
+                    set({ isLoading: false });
+                } catch (error: any) {
+                    console.error("Failed to delete sale:", error);
+                    set({ isLoading: false, error: `Failed to delete sale: ${error.message}` });
+                }
+            },
+
+            // Debt Management with DB
+            addDebt: async (debtData) => {
+                 if (!get().isDatabaseConnected) {
+                     set({ error: "Database not connected. Cannot add debt." });
+                     return null;
+                 }
+                set({ isLoading: true, error: null });
+                try {
+                     // Pass raw data to server action
+                    const savedDebt = await dbAddDebt(debtData);
+                    if (!savedDebt) throw new Error("Failed to save debt to database.");
+
+                    await get().initializeData(); // Refetch
+                    set({ isLoading: false });
+                    return savedDebt;
+                } catch (error: any) {
+                    console.error("Failed to add debt:", error);
+                     set({ isLoading: false, error: `Failed to add debt: ${error.message}` });
+                    return null;
+                }
+            },
+
+            updateDebt: async (debtId, updates) => {
+                 if (!get().isDatabaseConnected) {
+                    set({ error: "Database not connected. Cannot update debt." });
+                     return null;
+                 }
+                 const existingDebt = get().getDebtById(debtId);
+                 if (!existingDebt) {
+                     set({ error: "Debt not found." });
+                     return null;
+                 }
+
+                set({ isLoading: true, error: null });
+                try {
+                     // Prepare update data, recalculating status if amountPaid changes
+                     const finalUpdates = { ...updates };
+                     if (updates.amountPaid !== undefined) {
+                         const totalAmount = existingDebt.amount;
+                         const newAmountPaid = updates.amountPaid;
+                         if (newAmountPaid >= totalAmount) {
+                             finalUpdates.status = 'paid';
+                             // Use existing paidAt if provided, otherwise set new one
+                             finalUpdates.paidAt = updates.paidAt ?? new Date().toISOString();
+                         } else if (newAmountPaid > 0) {
+                             finalUpdates.status = 'partially_paid';
+                             finalUpdates.paidAt = null; // Clear paidAt if only partially paid
+                         } else {
+                             finalUpdates.status = 'pending';
+                             finalUpdates.paidAt = null; // Clear paidAt if back to pending
+                         }
+                     }
 
 
-        set((state) => ({
-            sales: [...state.sales, newSale],
-            products: updatedProducts,
-         }));
-         get().syncData().catch(err => console.warn("Background sync failed:", err));
-         return newSale;
-      },
+                    const updatedDebt = await dbUpdateDebt(debtId, finalUpdates);
+                    if (!updatedDebt) throw new Error("Failed to update debt in database.");
 
-       deleteSale: (saleId) => {
-         const saleToDelete = get().sales.find(s => s.id === saleId);
-         if (!saleToDelete) return;
+                    await get().initializeData(); // Refetch
+                    set({ isLoading: false });
+                    return updatedDebt;
+                } catch (error: any) {
+                    console.error("Failed to update debt:", error);
+                     set({ isLoading: false, error: `Failed to update debt: ${error.message}` });
+                     return null;
+                }
+            },
 
-         // Restore product's current quantity when deleting a sale/loss record
-         const updatedProducts = get().products.map(p =>
-             p.id === saleToDelete.productId
-                 ? { ...p, quantity: p.quantity + saleToDelete.quantitySold } // Adjust current quantity back
-                 : p
-         );
+            deleteDebt: async (debtId) => {
+                 if (!get().isDatabaseConnected) {
+                     set({ error: "Database not connected. Cannot delete debt." });
+                     return;
+                 }
+                set({ isLoading: true, error: null });
+                try {
+                    await dbDeleteDebt(debtId);
+                    await get().initializeData(); // Refetch
+                    set({ isLoading: false });
+                } catch (error: any) {
+                    console.error("Failed to delete debt:", error);
+                     set({ isLoading: false, error: `Failed to delete debt: ${error.message}` });
+                }
+            },
 
+            getSalesReportData: () => {
+                const { products, sales, debts } = get();
+                return calculateReports(products, sales, debts);
+            },
 
-        set((state) => ({
-          sales: state.sales.filter((s) => s.id !== saleId),
-           products: updatedProducts,
-           // Consider cascade delete/update for related debts if a sale is deleted
-           // debts: state.debts.filter(d => d.relatedSaleId !== saleId) // Example: delete related debts
-        }));
-         get().syncData().catch(err => console.warn("Background sync failed:", err));
-      },
+            // Setters for data loading (backup/import) - less critical with DB?
+            setProducts: (products) => set({ products }),
+            setSales: (sales) => set({ sales }),
+            setDebts: (debts) => set({ debts }),
+            setLastSync: (date) => set({ lastSync: date }),
 
-       // --- Debt Management ---
-      addDebt: (debtData) => {
-          const newDebt: Debt = {
-              ...debtData,
-              id: uuidv4(),
-              createdAt: new Date().toISOString(),
-              status: 'pending', // New debts start as pending
-              amountPaid: 0, // New debts start with 0 paid
-          };
-          set((state) => ({ debts: [...state.debts, newDebt] }));
-          get().syncData().catch(err => console.warn("Background sync failed:", err));
-          return newDebt;
-      },
+            // SyncData: Placeholder or could trigger background jobs
+            syncData: async () => {
+                if (!get().isOnline || !get().isDatabaseConnected) {
+                    console.log("Sync skipped: Offline or DB not connected.");
+                    return;
+                }
+                console.log("Simulating background data sync/check...");
+                // In a real app, this might check for pending operations or refresh data
+                set({ lastSync: new Date() });
+            },
 
-      updateDebt: (debtId, updates) => {
-          set((state) => ({
-              debts: state.debts.map((debt) => {
-                  if (debt.id === debtId) {
-                      const updatedDebt = { ...debt, ...updates };
-                      // Auto-update status based on amount paid
-                      if (updatedDebt.amountPaid >= updatedDebt.amount) {
-                          updatedDebt.status = 'paid';
-                          updatedDebt.paidAt = updatedDebt.paidAt ?? new Date().toISOString(); // Set paidAt if not already set
-                      } else if (updatedDebt.amountPaid > 0) {
-                          updatedDebt.status = 'partially_paid';
-                          updatedDebt.paidAt = null; // Ensure paidAt is null if only partially paid
+             checkDatabaseConnection: async () => {
+                 try {
+                     const isConnected = await checkDbConnection();
+                     set({ isDatabaseConnected: isConnected });
+                      if (!isConnected) {
+                          set({ error: "Database connection failed." });
                       } else {
-                          updatedDebt.status = 'pending';
-                           updatedDebt.paidAt = null; // Ensure paidAt is null if pending
+                           // If connection is successful, clear previous connection error
+                           if (get().error === "Database connection failed.") {
+                               set({ error: null });
+                           }
                       }
-                      return updatedDebt;
-                  }
-                  return debt;
-              }),
-          }));
-          get().syncData().catch(err => console.warn("Background sync failed:", err));
-      },
+                 } catch (error: any) {
+                     console.error("Database connection check failed:", error);
+                     set({ isDatabaseConnected: false, error: `Database connection check failed: ${error.message}` });
+                 }
+             },
 
-      deleteDebt: (debtId) => {
-          set((state) => ({
-              debts: state.debts.filter((d) => d.id !== debtId),
-          }));
-           get().syncData().catch(err => console.warn("Background sync failed:", err));
-      },
-
-      getDebtById: (debtId) => {
-          return get().debts.find(d => d.id === debtId);
-      },
-       // -----------------------
-
-       getSalesReportData: () => {
-           const { products, sales, debts } = get(); // Include debts
-           // Pass debts to the calculation function
-           return calculateReports(products, sales, debts);
-       },
-
-        // Load initial data or replace existing data
-        setProducts: (products) => set({ products }),
-        setSales: (sales) => set({ sales }),
-        setDebts: (debts) => set({ debts }), // Setter for debts
-        setLastSync: (date) => set({ lastSync: date }),
-
-        // Simulate synchronization with Google Drive
-        syncData: async () => {
-            if (!get().isOnline) {
-                console.log("Offline. Sync skipped.");
-                return;
-            }
-            console.log("Simulating data synchronization...");
-             try {
-                 await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate network delay
-                 console.log("Synchronization simulation complete.");
-                 set({ lastSync: new Date() });
-             } catch (error) {
-                 console.error("Synchronization simulation failed:", error);
-             }
-        },
-
-    }),
-    {
-      name: 'vendas-tranquilas-storage', // name of the item in the storage (must be unique)
-      storage: createJSONStorage(() => localStorage), // (optional) by default, 'localStorage' is used
-       // Persist products, sales, debts, currency, and last sync time.
-       partialize: (state) => ({
-           products: state.products,
-           sales: state.sales,
-           debts: state.debts, // Persist debts
-           lastSync: state.lastSync,
-           currency: state.currency // Persist the selected currency
         }),
-        onRehydrateStorage: () => (state, error) => {
-            if (error) {
-                console.error("Failed to rehydrate state from storage:", error);
-            } else if (state) {
-                 if (!state.currency) {
-                    state.currency = DEFAULT_CURRENCY_CODE;
+        {
+            name: 'vendas-tranquilas-storage', // name of the item in the storage (must be unique)
+            storage: createJSONStorage(() => localStorage), // Keep localStorage as a fallback/cache
+            // Persist only essential settings or minimal cache if DB is primary
+            partialize: (state) => ({
+                // products: state.products, // Maybe cache?
+                // sales: state.sales,       // Maybe cache?
+                // debts: state.debts,       // Maybe cache?
+                lastSync: state.lastSync,
+                currency: state.currency,
+                // Don't persist isOnline, isDatabaseConnected, isLoading, error
+            }),
+             onRehydrateStorage: (state) => {
+                console.log("Attempting to rehydrate state...");
+                 return (rehydratedState, error) => {
+                     if (error) {
+                         console.error("Failed to rehydrate state from storage:", error);
+                     } else if (rehydratedState) {
+                        console.log("Rehydration successful (from localStorage).");
+                         // Ensure default currency if missing
+                         if (!rehydratedState.currency) {
+                             rehydratedState.currency = DEFAULT_CURRENCY_CODE;
+                         }
+                         // Set initial online status based on browser
+                         rehydratedState.isOnline = typeof navigator !== 'undefined' ? navigator.onLine : true;
+                         // Trigger initial data load and connection check after rehydration
+                         // Use setTimeout to avoid issues during initialization phase
+                         setTimeout(() => {
+                            console.log("Checking DB connection and initializing data post-rehydration...");
+                            useStore.getState().checkDatabaseConnection().then(() => {
+                                if(useStore.getState().isDatabaseConnected) {
+                                    useStore.getState().initializeData();
+                                } else {
+                                    console.warn("Database not connected after rehydration, skipping initial data load from DB.");
+                                     // Maybe load cached data from localStorage here if desired
+                                     // set({ products: rehydratedState.products || [], sales: rehydratedState.sales || [], debts: rehydratedState.debts || [] });
+                                }
+                            });
+                         }, 0);
+                     } else {
+                         console.log("No state found in storage for rehydration.");
+                         // If no state, set defaults and trigger initial load
+                          setTimeout(() => {
+                              console.log("No stored state, checking DB connection and initializing data...");
+                              useStore.getState().checkDatabaseConnection().then(() => {
+                                  if (useStore.getState().isDatabaseConnected) {
+                                      useStore.getState().initializeData();
+                                  } else {
+                                       console.warn("Database not connected, cannot initialize data.");
+                                  }
+                              });
+                          }, 0);
+
+                     }
                  }
-                 // Ensure debts is an array on rehydration
-                 if (!Array.isArray(state.debts)) {
-                    state.debts = [];
-                 }
-                const isOnlineNow = typeof navigator !== 'undefined' ? navigator.onLine : true;
-                state.setIsOnline(isOnlineNow);
-                console.log("Hydration finished. Current currency:", state.currency);
-            }
-        }
-    }
-  )
-);
+             },
+        } // End of persist options
+    ) // End of persist call
+); // End of create call
+
 
 // Add event listeners for online/offline status
 if (typeof window !== 'undefined') {
     const updateOnlineStatus = () => {
-        const storeState = useStore.getState();
-        const currentlyOnline = navigator.onLine;
-        storeState.setIsOnline(currentlyOnline);
-         if (currentlyOnline) {
-            console.log("Became online. Attempting background sync...");
-             storeState.syncData().catch(err => console.warn("Background sync failed:", err));
-         } else {
-             console.log("Became offline.");
-         }
+        useStore.getState().setIsOnline(navigator.onLine);
     };
 
     window.addEventListener('online', updateOnlineStatus);
     window.addEventListener('offline', updateOnlineStatus);
+
+     // Initial check
+     // updateOnlineStatus(); // Initial check might happen too early, rely on rehydration logic
 }
 
 // Export UUID generator if needed elsewhere
 export { uuidv4 };
+

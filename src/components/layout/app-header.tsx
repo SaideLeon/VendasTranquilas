@@ -1,7 +1,7 @@
 // src/components/layout/app-header.tsx
 "use client";
 
-import Link from "next/link";
+import Link from 'next/link';
 import { usePathname } from "next/navigation";
 import { Package, ShoppingCart, BarChart3, Wifi, WifiOff, Cloud, Upload, Download, Landmark, HandCoins, BrainCircuit } from "lucide-react"; // Added HandCoins for Debts, BrainCircuit for Insights
 import { Button } from "@/components/ui/button";
@@ -24,7 +24,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
-} from "@/components/ui/dropdown-menu";
+} from '@/components/ui/dropdown-menu';
 import { handleExport, handleImport } from '@/lib/data-utils';
 import { useToast } from "@/hooks/use-toast";
 import React, { useRef } from "react";
@@ -34,7 +34,7 @@ import { SUPPORTED_CURRENCIES, getCurrencyConfig } from "@/config/currencies";
 export default function AppHeader() {
   const pathname = usePathname();
   // Added setDebts to the destructuring
-  const { isOnline, syncData, lastSync, setProducts, setSales, setDebts, setLastSync, currency, setCurrency } = useStore();
+  const { isOnline, syncData, lastSync, setProducts, setSales, setDebts, setLastSync, currency, setCurrency, isDatabaseConnected } = useStore();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -216,6 +216,21 @@ export default function AppHeader() {
             style={{ display: 'none' }}
             onChange={onFileSelected}
            />
+
+           {/* Database Status Indicator */}
+           <TooltipProvider>
+             <Tooltip>
+               <TooltipTrigger asChild>
+                 <Button variant="ghost" size="icon">
+                   {isDatabaseConnected ? <Landmark className="h-5 w-5 text-green-600" /> : <Landmark className="h-5 w-5 text-red-600 rotate-45" />}
+                   <span className="sr-only">{isDatabaseConnected ? "Conectado" : "Desconectado"}</span>
+                 </Button>
+               </TooltipTrigger>
+               <TooltipContent>
+                 <p>{isDatabaseConnected ? "Banco de dados conectado" : "Banco de dados desconectado"}</p>
+               </TooltipContent>
+             </Tooltip>
+           </TooltipProvider>
 
            {/* Online Status Indicator */}
           <TooltipProvider>
