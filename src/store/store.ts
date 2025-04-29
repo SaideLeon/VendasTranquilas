@@ -1,4 +1,8 @@
 import { create } from 'zustand';
+
+interface CheckDbConnectionResponse {
+    isConnected: boolean;
+}
 import { persist, createJSONStorage } from 'zustand/middleware';
 import type { Product, Sale, ReportData, Debt } from '@/types';
 import { calculateUnitCost } from '@/types'; // Assuming this helper stays in types
@@ -16,7 +20,6 @@ import {
   addDebt as dbAddDebt,
   updateDebt as dbUpdateDebt,
   deleteDebt as dbDeleteDebt,
-  checkDbConnection
 } from '@/app/actions'; // Import DB actions
 
 interface AppState {
@@ -466,7 +469,17 @@ export const useStore = create<AppState>()(
 
              checkDatabaseConnection: async () => {
                  try {
-                     const isConnected = await checkDbConnection();
+                     const response = await fetch('/check-db', {
+                         method: 'POST',
+                         headers: {
+                             'Content-Type': 'application/json',
+                         },
+                         body: JSON.stringify({}), // Send an empty body or relevant data if needed
+                     });
+
+                     const data: CheckDbConnectionResponse = await response.json();
+                     const isConnected = data.isConnected;
+
                      set({ isDatabaseConnected: isConnected });
                       if (!isConnected) {
                           set({ error: "Database connection failed." });
