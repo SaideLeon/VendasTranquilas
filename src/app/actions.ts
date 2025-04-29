@@ -1,19 +1,19 @@
 'use server';
 
-import { db, productsTable, salesTable, debtsTable } from '@/lib/db';
-import type { Product, Sale, Debt } from '@/types';
+import { prisma } from '@/lib/prisma'; // Import Prisma client
+import type { Product, Sale, Debt, DebtStatus } from '@/types';
 import { calculateUnitCost } from '@/types'; // Assuming this helper stays in types
-import { eq, sql as drizzleSql } from 'drizzle-orm';
-import { sql } from '@vercel/postgres'; // For connection check
+import { sql } from '@vercel/postgres'; // Keep for connection check if needed, though Prisma has its own check
 
-// --- Database Connection Check ---
+// --- Database Connection Check (using Prisma) ---
 export async function checkDbConnection(): Promise<boolean> {
   try {
-    await sql`SELECT 1`; // Simple query to check connection
-    console.log("Database connection successful.");
+    // Prisma's way to check connection: try a simple query
+    await prisma.$queryRaw`SELECT 1`;
+    console.log("Database connection successful (via Prisma).");
     return true;
   } catch (error) {
-    console.error("Database connection failed:", error);
+    console.error("Database connection failed (via Prisma):", error);
     return false;
   }
 }
@@ -22,11 +22,15 @@ export async function checkDbConnection(): Promise<boolean> {
 // --- Product Actions ---
 export async function getProducts(): Promise<Product[]> {
   try {
-    const products = await db.select().from(productsTable).orderBy(productsTable.createdAt);
-    // Map result to Product type if needed (Drizzle should infer correctly here)
+    const products = await prisma.product.findMany({
+      orderBy: { createdAt: 'asc' },
+    });
+    // Map Prisma result to your Product type (handle Date to string conversion)
     return products.map(p => ({
-        ...p,
-        createdAt: p.createdAt.toISOString(), // Ensure date is string
+      ...p,
+      createdAt: p.createdAt.toISOString(),
+      acquisitionValue: p.acquisitionValue, // Ensure type compatibility if needed
+      initialQuantity: p.initialQuantity ?? undefined, // Handle null from DB
     })) as Product[];
   } catch (error) {
     console.error("Error fetching products:", error);
@@ -35,26 +39,24 @@ export async function getProducts(): Promise<Product[]> {
 }
 
 export async function addProduct(productData: Omit<Product, 'id' | 'createdAt'>): Promise<Product | null> {
-  const newProduct: Product = {
+  const newProductData = {
     ...productData,
-    id: crypto.randomUUID(), // Generate UUID
-    createdAt: new Date().toISOString(),
-    // Ensure initialQuantity is set correctly
+    // Prisma typically handles ID generation if using autoincrement or cuid/uuid defaults
+    // If you need manual UUID: id: crypto.randomUUID(), ensure schema supports it
+    // createdAt is handled by Prisma's default
     initialQuantity: productData.initialQuantity ?? productData.quantity,
   };
   try {
-    const inserted = await db.insert(productsTable).values({
-        ...newProduct,
-        createdAt: new Date(newProduct.createdAt) // Convert back to Date for DB
-    }).returning();
+    const inserted = await prisma.product.create({
+      data: newProductData,
+    });
 
-    if (!inserted || inserted.length === 0) {
-        throw new Error("Insert operation returned no result.");
-    }
     // Map result back to Product type
     return {
-        ...inserted[0],
-        createdAt: inserted[0].createdAt.toISOString(),
+      ...inserted,
+      createdAt: inserted.createdAt.toISOString(),
+      acquisitionValue: inserted.acquisitionValue,
+      initialQuantity: inserted.initialQuantity ?? undefined,
     } as Product;
   } catch (error) {
     console.error("Error adding product:", error);
@@ -64,23 +66,22 @@ export async function addProduct(productData: Omit<Product, 'id' | 'createdAt'>)
 
 export async function updateProduct(product: Product): Promise<Product | null> {
   try {
-    const updated = await db.update(productsTable)
-      .set({
+    const updated = await prisma.product.update({
+      where: { id: product.id },
+      data: {
         name: product.name,
         acquisitionValue: product.acquisitionValue,
         quantity: product.quantity,
         initialQuantity: product.initialQuantity,
         // Do not update createdAt
-      })
-      .where(eq(productsTable.id, product.id))
-      .returning();
+      },
+    });
 
-     if (!updated || updated.length === 0) {
-        throw new Error("Update operation returned no result or product not found.");
-    }
-     return {
-        ...updated[0],
-        createdAt: updated[0].createdAt.toISOString(), // Ensure date is string
+    return {
+      ...updated,
+      createdAt: updated.createdAt.toISOString(),
+      acquisitionValue: updated.acquisitionValue,
+      initialQuantity: updated.initialQuantity ?? undefined,
     } as Product;
   } catch (error) {
     console.error("Error updating product:", error);
@@ -90,8 +91,11 @@ export async function updateProduct(product: Product): Promise<Product | null> {
 
 export async function deleteProduct(productId: string): Promise<void> {
   try {
-    // Drizzle handles cascading deletes if set up in schema or DB
-    await db.delete(productsTable).where(eq(productsTable.id, productId));
+    // Prisma handles cascading deletes based on your schema definition
+    // Use a transaction if you need to delete related sales/debts manually before deleting the product
+    await prisma.product.delete({
+      where: { id: productId },
+    });
   } catch (error) {
     console.error("Error deleting product:", error);
     throw new Error(`Failed to delete product: ${error instanceof Error ? error.message : String(error)}`);
@@ -102,10 +106,15 @@ export async function deleteProduct(productId: string): Promise<void> {
 // --- Sale Actions ---
 export async function getSales(): Promise<Sale[]> {
   try {
-    const sales = await db.select().from(salesTable).orderBy(salesTable.createdAt);
-     return sales.map(s => ({
-        ...s,
-        createdAt: s.createdAt.toISOString(), // Ensure date is string
+    const sales = await prisma.sale.findMany({
+      orderBy: { createdAt: 'asc' },
+    });
+    return sales.map(s => ({
+      ...s,
+      createdAt: s.createdAt.toISOString(),
+      saleValue: s.saleValue, // Ensure type compatibility
+      profit: s.profit,
+      lossReason: s.lossReason ?? undefined,
     })) as Sale[];
   } catch (error) {
     console.error("Error fetching sales:", error);
@@ -113,55 +122,59 @@ export async function getSales(): Promise<Sale[]> {
   }
 }
 
-export async function addSale(saleData: Omit<Sale, 'id' | 'createdAt'>): Promise<Sale | null> {
-    const product = await db.select().from(productsTable).where(eq(productsTable.id, saleData.productId)).limit(1);
+export async function addSale(saleData: Omit<Sale, 'id' | 'createdAt' | 'productName' | 'profit'>): Promise<Sale | null> {
+    const product = await prisma.product.findUnique({
+        where: { id: saleData.productId },
+    });
 
-    if (!product || product.length === 0) {
+    if (!product) {
         throw new Error("Product not found for sale.");
     }
-    if (product[0].quantity < saleData.quantitySold) {
+    if (product.quantity < saleData.quantitySold) {
         throw new Error("Insufficient stock for sale/loss.");
     }
 
-    const { cost: unitCost } = calculateUnitCost(product[0] as Product);
+    const { cost: unitCost } = calculateUnitCost(product as Product); // Cast to Product type
     const profit = saleData.isLoss
         ? -(unitCost * saleData.quantitySold)
         : saleData.saleValue - (unitCost * saleData.quantitySold);
 
-    const newSale: Sale = {
+    const newSaleData = {
         ...saleData,
-        id: crypto.randomUUID(),
-        productName: product[0].name,
+        productName: product.name, // Get product name
         profit: profit,
-        createdAt: new Date().toISOString(),
+        // id and createdAt handled by Prisma/DB
     };
 
     try {
-        // Use a transaction to ensure atomicity
-        await db.transaction(async (tx) => {
-            // 1. Insert the sale
-            await tx.insert(salesTable).values({
-                ...newSale,
-                createdAt: new Date(newSale.createdAt) // Convert to Date for DB
+        // Use Prisma transaction
+        const result = await prisma.$transaction(async (tx) => {
+            // 1. Create the sale
+             const createdSale = await tx.sale.create({
+                data: newSaleData,
             });
 
             // 2. Update product quantity
-            await tx.update(productsTable)
-                .set({ quantity: product[0].quantity - saleData.quantitySold })
-                .where(eq(productsTable.id, saleData.productId));
+            const updatedProduct = await tx.product.update({
+                where: { id: saleData.productId },
+                data: { quantity: { decrement: saleData.quantitySold } },
+            });
+
+             if (!updatedProduct) {
+                throw new Error("Failed to update product quantity."); // Should not happen if product exists
+             }
+
+            return createdSale;
         });
 
-         // Fetch the newly inserted sale to return it
-        const insertedSale = await db.select().from(salesTable).where(eq(salesTable.id, newSale.id)).limit(1);
 
-         if (!insertedSale || insertedSale.length === 0) {
-            throw new Error("Failed to fetch the newly added sale."); // Should not happen if transaction succeeded
-        }
-
-         return {
-             ...insertedSale[0],
-             createdAt: insertedSale[0].createdAt.toISOString(), // Ensure date is string
-         } as Sale;
+        return {
+            ...result,
+             createdAt: result.createdAt.toISOString(), // Ensure date is string
+             saleValue: result.saleValue,
+             profit: result.profit,
+             lossReason: result.lossReason ?? undefined,
+        } as Sale;
 
     } catch (error) {
         console.error("Error adding sale and updating product quantity:", error);
@@ -170,30 +183,38 @@ export async function addSale(saleData: Omit<Sale, 'id' | 'createdAt'>): Promise
 }
 
 export async function deleteSale(saleId: string): Promise<void> {
-  const saleToDelete = await db.select().from(salesTable).where(eq(salesTable.id, saleId)).limit(1);
+  const saleToDelete = await prisma.sale.findUnique({
+    where: { id: saleId },
+    include: { product: true }, // Include product to get quantitySold and productId
+  });
 
-  if (!saleToDelete || saleToDelete.length === 0) {
+  if (!saleToDelete) {
     throw new Error("Sale not found.");
   }
 
-  const product = await db.select().from(productsTable).where(eq(productsTable.id, saleToDelete[0].productId)).limit(1);
-
-  if (!product || product.length === 0) {
-    // This indicates data inconsistency, but proceed with sale deletion attempt
-    console.warn(`Product with ID ${saleToDelete[0].productId} not found for sale ${saleId}. Attempting to delete sale only.`);
+  if (!saleToDelete.product) {
+     // This indicates data inconsistency, but proceed with sale deletion attempt
+     console.warn(`Product with ID ${saleToDelete.productId} not found for sale ${saleId}. Attempting to delete sale only.`);
+      try {
+         await prisma.sale.delete({ where: { id: saleId } });
+     } catch (error) {
+         console.error("Error deleting sale (product was missing):", error);
+         throw new Error(`Failed to delete sale: ${error instanceof Error ? error.message : String(error)}`);
+     }
+     return;
   }
 
   try {
-     await db.transaction(async (tx) => {
+     // Use Prisma transaction
+     await prisma.$transaction(async (tx) => {
             // 1. Delete the sale
-            await tx.delete(salesTable).where(eq(salesTable.id, saleId));
+            await tx.sale.delete({ where: { id: saleId } });
 
-            // 2. Restore product quantity (if product exists)
-            if (product && product.length > 0) {
-                 await tx.update(productsTable)
-                .set({ quantity: product[0].quantity + saleToDelete[0].quantitySold })
-                .where(eq(productsTable.id, saleToDelete[0].productId));
-            }
+            // 2. Restore product quantity
+             await tx.product.update({
+                 where: { id: saleToDelete.productId },
+                 data: { quantity: { increment: saleToDelete.quantitySold } },
+             });
      });
   } catch (error) {
     console.error("Error deleting sale and restoring product quantity:", error);
@@ -205,12 +226,20 @@ export async function deleteSale(saleId: string): Promise<void> {
 // --- Debt Actions ---
 export async function getDebts(): Promise<Debt[]> {
   try {
-    const debts = await db.select().from(debtsTable).orderBy(debtsTable.createdAt);
+    const debts = await prisma.debt.findMany({
+      orderBy: { createdAt: 'asc' },
+    });
      return debts.map(d => ({
         ...d,
-        createdAt: d.createdAt.toISOString(), // Ensure date is string
+        createdAt: d.createdAt.toISOString(),
         dueDate: d.dueDate ? d.dueDate.toISOString() : null,
         paidAt: d.paidAt ? d.paidAt.toISOString() : null,
+        amount: d.amount, // Ensure type compatibility
+        amountPaid: d.amountPaid,
+        status: d.status as DebtStatus, // Cast status to DebtStatus enum/type
+        type: d.type as 'receivable' | 'payable',
+        contactName: d.contactName ?? undefined,
+        relatedSaleId: d.relatedSaleId ?? undefined,
     })) as Debt[];
   } catch (error) {
     console.error("Error fetching debts:", error);
@@ -218,30 +247,31 @@ export async function getDebts(): Promise<Debt[]> {
   }
 }
 
-export async function addDebt(debtData: Omit<Debt, 'id' | 'createdAt'>): Promise<Debt | null> {
-   const newDebt: Debt = {
+export async function addDebt(debtData: Omit<Debt, 'id' | 'createdAt' | 'status' | 'amountPaid'>): Promise<Debt | null> {
+   const newDebtData = {
         ...debtData,
-        id: crypto.randomUUID(),
-        status: 'pending',
-        amountPaid: 0,
-        createdAt: new Date().toISOString(),
+        status: 'pending' as DebtStatus, // Default status
+        amountPaid: 0, // Default amount paid
+        // id and createdAt handled by Prisma/DB
+        dueDate: debtData.dueDate ? new Date(debtData.dueDate) : null, // Convert string to Date for Prisma
+        relatedSaleId: debtData.relatedSaleId || null, // Ensure null if undefined/empty
     };
   try {
-    const inserted = await db.insert(debtsTable).values({
-        ...newDebt,
-        createdAt: new Date(newDebt.createdAt), // Convert to Date
-        dueDate: newDebt.dueDate ? new Date(newDebt.dueDate) : null,
-    }).returning();
+    const inserted = await prisma.debt.create({
+      data: newDebtData,
+    });
 
-     if (!inserted || inserted.length === 0) {
-        throw new Error("Insert operation returned no result.");
-    }
-
-     return {
-        ...inserted[0],
-        createdAt: inserted[0].createdAt.toISOString(), // Ensure date is string
-        dueDate: inserted[0].dueDate ? inserted[0].dueDate.toISOString() : null,
-        paidAt: inserted[0].paidAt ? inserted[0].paidAt.toISOString() : null,
+    return {
+        ...inserted,
+        createdAt: inserted.createdAt.toISOString(),
+        dueDate: inserted.dueDate ? inserted.dueDate.toISOString() : null,
+        paidAt: inserted.paidAt ? inserted.paidAt.toISOString() : null,
+        amount: inserted.amount,
+        amountPaid: inserted.amountPaid,
+        status: inserted.status as DebtStatus,
+        type: inserted.type as 'receivable' | 'payable',
+        contactName: inserted.contactName ?? undefined,
+        relatedSaleId: inserted.relatedSaleId ?? undefined,
     } as Debt;
   } catch (error) {
     console.error("Error adding debt:", error);
@@ -250,33 +280,50 @@ export async function addDebt(debtData: Omit<Debt, 'id' | 'createdAt'>): Promise
 }
 
 export async function updateDebt(debtId: string, updates: Partial<Omit<Debt, 'id' | 'createdAt'>>): Promise<Debt | null> {
-    // Convert date strings back to Date objects for DB update
-    const dbUpdates: Record<string, any> = { ...updates };
+    // Convert date strings back to Date objects for Prisma update
+    const prismaUpdates: Record<string, any> = { ...updates };
+
     if (updates.dueDate) {
-        dbUpdates.dueDate = new Date(updates.dueDate);
+        prismaUpdates.dueDate = new Date(updates.dueDate);
+    } else if (updates.dueDate === null) {
+        prismaUpdates.dueDate = null;
     }
-     if (updates.paidAt) {
-        dbUpdates.paidAt = new Date(updates.paidAt);
+
+    if (updates.paidAt) {
+        prismaUpdates.paidAt = new Date(updates.paidAt);
+     } else if (updates.paidAt === null) {
+         prismaUpdates.paidAt = null;
+     }
+
+    // Remove fields not directly updatable or handled by Prisma
+    delete prismaUpdates.id;
+    delete prismaUpdates.createdAt;
+    // If status is being updated, ensure it's the correct enum type
+    if (updates.status) {
+        prismaUpdates.status = updates.status as DebtStatus;
     }
-    // Remove id and createdAt if present in updates object
-    delete dbUpdates.id;
-    delete dbUpdates.createdAt;
+     if (updates.type) {
+        prismaUpdates.type = updates.type as 'receivable' | 'payable';
+    }
+
 
   try {
-    const updated = await db.update(debtsTable)
-      .set(dbUpdates)
-      .where(eq(debtsTable.id, debtId))
-      .returning();
+    const updated = await prisma.debt.update({
+      where: { id: debtId },
+      data: prismaUpdates,
+    });
 
-     if (!updated || updated.length === 0) {
-        throw new Error("Update operation returned no result or debt not found.");
-    }
-
-     return {
-        ...updated[0],
-        createdAt: updated[0].createdAt.toISOString(), // Ensure date is string
-        dueDate: updated[0].dueDate ? updated[0].dueDate.toISOString() : null,
-        paidAt: updated[0].paidAt ? updated[0].paidAt.toISOString() : null,
+    return {
+        ...updated,
+        createdAt: updated.createdAt.toISOString(),
+        dueDate: updated.dueDate ? updated.dueDate.toISOString() : null,
+        paidAt: updated.paidAt ? updated.paidAt.toISOString() : null,
+        amount: updated.amount,
+        amountPaid: updated.amountPaid,
+        status: updated.status as DebtStatus,
+        type: updated.type as 'receivable' | 'payable',
+        contactName: updated.contactName ?? undefined,
+        relatedSaleId: updated.relatedSaleId ?? undefined,
     } as Debt;
   } catch (error) {
     console.error("Error updating debt:", error);
@@ -286,7 +333,9 @@ export async function updateDebt(debtId: string, updates: Partial<Omit<Debt, 'id
 
 export async function deleteDebt(debtId: string): Promise<void> {
   try {
-    await db.delete(debtsTable).where(eq(debtsTable.id, debtId));
+    await prisma.debt.delete({
+      where: { id: debtId },
+    });
   } catch (error) {
     console.error("Error deleting debt:", error);
      throw new Error(`Failed to delete debt: ${error instanceof Error ? error.message : String(error)}`);

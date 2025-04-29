@@ -1,43 +1,64 @@
-datasource db {
-  provider  = "postgresql"
-  url  	    = env("DATABASE_URL")
-  // uncomment next line if you use Prisma <5.10
-  // directUrl = env("DATABASE_URL_UNPOOLED")
-}
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
   provider = "prisma-client-js"
 }
-model Product {
-  id        Int      @id @default(autoincrement())
-  name      String
-  price     Decimal
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 
-  sales     Sale[]
+datasource db {
+  provider = "postgresql"
+  url      = env("POSTGRES_PRISMA_URL") // uses connection pooling
+  directUrl = env("POSTGRES_URL_NON_POOLING") // uses a direct connection
+  shadowDatabaseUrl = env("POSTGRES_URL_NON_POOLING") // used for migrations
+}
+
+
+model Product {
+  id               String    @id @default(cuid()) // Use cuid() or uuid()
+  name             String
+  acquisitionValue Float     @map("acquisition_value")
+  quantity         Int
+  initialQuantity  Int?      @map("initial_quantity") // Optional initial quantity
+  createdAt        DateTime  @default(now()) @map("created_at")
+  sales            Sale[] // Relation to Sales
 }
 
 model Sale {
-  id          Int      @id @default(autoincrement())
-  productId   Int
-  product     Product  @relation(fields: [productId], references: [id])
-  quantity    Int
-  value       Decimal
-  loss        Boolean
-  lossReason  String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id           String    @id @default(cuid())
+  productId    String    @map("product_id")
+  productName  String    @map("product_name") // Denormalized name
+  quantitySold Int       @map("quantity_sold")
+  saleValue    Float     @map("sale_value")
+  isLoss       Boolean   @default(false) @map("is_loss")
+  lossReason   String?   @map("loss_reason")
+  profit       Float
+  createdAt    DateTime  @default(now()) @map("created_at")
+  product      Product   @relation(fields: [productId], references: [id], onDelete: Cascade) // Define relation with onDelete cascade
+  debts        Debt[]    // Relation to Debts generated from this sale
 }
 
 model Debt {
-  id          Int      @id @default(autoincrement())
-  description String
-  value       Decimal
-  type        String // 'payable' or 'receivable'
-  dueDate     DateTime
-  paid        Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id            String    @id @default(cuid())
+  type          DebtType // Enum defined below
+  description   String
+  amount        Float
+  amountPaid    Float     @default(0) @map("amount_paid")
+  dueDate       DateTime? @map("due_date")
+  status        DebtStatus @default(PENDING) // Enum defined below
+  contactName   String?   @map("contact_name")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  paidAt        DateTime? @map("paid_at")
+  relatedSaleId String?   @map("related_sale_id")
+  sale          Sale?     @relation(fields: [relatedSaleId], references: [id], onDelete: SetNull) // Optional relation, set null on sale delete
 }
 
+enum DebtType {
+  receivable
+  payable
+}
+
+enum DebtStatus {
+  PENDING
+  PAID
+  PARTIALLY_PAID
+}
