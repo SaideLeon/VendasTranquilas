@@ -32,16 +32,18 @@ import {
   CircleCheck,
   CircleAlert,
   CircleX,
+  RefreshCw, // Import the sync icon
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/currency-utils';
 import { Badge } from '@/components/ui/badge';
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 export default function InsightsPage() {
-  const { products, sales, debts, currency } = useStore();
+  const { products, sales, debts, currency, initializeData } = useStore(); // Get initializeData from store
   const [analysisResult, setAnalysisResult] =
     useState<FinancialAnalysisOutput | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false); // State for sync button
   const [error, setError] = useState<string | null>(null);
 
   const handleAnalyze = async () => {
@@ -72,6 +74,24 @@ export default function InsightsPage() {
       );
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleSync = async () => {
+    setIsSyncing(true);
+    setError(null);
+    try {
+      await initializeData();
+      // Optionally, show a success message to the user
+    } catch (err) {
+      console.error('Data sync failed:', err);
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'Ocorreu um erro ao sincronizar os dados.'
+      );
+    } finally {
+      setIsSyncing(false);
     }
   };
 
@@ -125,14 +145,18 @@ export default function InsightsPage() {
               com base nos seus dados de vendas, produtos e dívidas.
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <Button onClick={handleAnalyze} disabled={isLoading}>
+          <CardContent className="flex items-center gap-2">
+            <Button onClick={handleAnalyze} disabled={isLoading || isSyncing}>
               {isLoading ? 'Analisando...' : 'Gerar Análise Financeira'}
+            </Button>
+            <Button onClick={handleSync} disabled={isLoading || isSyncing} variant="outline">
+              <RefreshCw className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
+              <span className="ml-2">{isSyncing ? 'Sincronizando...' : 'Sincronizar Dados'}</span>
             </Button>
             {error && (
               <Alert variant="destructive" className="mt-4">
                 <AlertTriangle className="h-4 w-4" />
-                <AlertTitle>Erro na Análise</AlertTitle>
+                <AlertTitle>Erro</AlertTitle>
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
