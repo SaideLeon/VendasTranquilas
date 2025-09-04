@@ -1,10 +1,10 @@
 import type {NextConfig} from 'next';
+import withPWA from 'next-pwa';
 
 /** @type {import('next').NextConfig} */
 const nextConfig: NextConfig = {
   /* config options here */
   reactStrictMode: true, // Enable React strict mode for highlighting potential problems
-  swcMinify: true, // Enable SWC minification for faster builds
   typescript: {
     // Dangerously allow production builds to successfully complete even if
     // your project has type errors.
@@ -32,6 +32,11 @@ const nextConfig: NextConfig = {
    },
 };
 
-export default nextConfig;
+export default withPWA({
+  dest: 'public',
+  register: true,
+  skipWaiting: true,
+  disable: process.env.NODE_ENV === 'development',
+})(nextConfig);
 
         
