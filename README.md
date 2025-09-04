@@ -1,6 +1,6 @@
-# Vendas Tranquilas
+# SIGEF - Sistema Interativo de Gestão Financeira
 
-Aplicação web para controle simplificado de produtos, vendas e perdas, com foco em funcionamento offline e sincronização simulada.
+Aplicação web para controle simplificado de produtos, vendas, dívidas e análise financeira com IA.
 
 ## Funcionalidades
 

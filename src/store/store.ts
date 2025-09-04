@@ -403,14 +403,14 @@ export const useStore = create<AppState>()(
                          const totalAmount = existingDebt.amount;
                          const newAmountPaid = updates.amountPaid;
                          if (newAmountPaid >= totalAmount) {
-                             finalUpdates.status = 'paid';
+                             finalUpdates.status = 'PAID';
                              // Use existing paidAt if provided, otherwise set new one
                              finalUpdates.paidAt = updates.paidAt ?? new Date().toISOString();
                          } else if (newAmountPaid > 0) {
-                             finalUpdates.status = 'partially_paid';
+                             finalUpdates.status = 'PARTIALLY_PAID';
                              finalUpdates.paidAt = null; // Clear paidAt if only partially paid
                          } else {
-                             finalUpdates.status = 'pending';
+                             finalUpdates.status = 'PENDING';
                              finalUpdates.paidAt = null; // Clear paidAt if back to pending
                          }
                      }

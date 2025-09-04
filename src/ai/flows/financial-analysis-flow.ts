@@ -29,16 +29,24 @@ export async function analyzeFinances(
   const currencyConfig = getCurrencyConfig(input.currencyCode);
   const currencySymbol = currencyConfig?.symbol || input.currencyCode;
 
-  // Calculate approximate asset value (current stock value)
+  // Calculate total pending receivables
+  const totalReceivablesPending = input.debts.reduce((sum, debt) => {
+    if (debt.type === 'receivable' && debt.status !== 'PAID') {
+      return sum + (debt.amount - debt.amountPaid);
+    }
+    return sum;
+  }, 0);
+
+  // Calculate approximate asset value (current stock value + receivables)
   const approxAssets = input.products.reduce((total, product) => {
     const { cost: unitCost } = calculateUnitCost(product);
     // Use current quantity for stock value
     return total + (unitCost * product.quantity);
-  }, 0);
+  }, 0) + totalReceivablesPending;
 
   // Calculate approximate liabilities (pending payables)
   const approxLiabilities = input.debts.reduce((sum, debt) => {
-    if (debt.type === 'payable' && debt.status !== 'paid') {
+    if (debt.type === 'payable' && debt.status !== 'PAID') {
       return sum + (debt.amount - debt.amountPaid);
     }
     return sum;
@@ -46,13 +54,45 @@ export async function analyzeFinances(
 
   const approxNetWorth = approxAssets - approxLiabilities;
 
-  // Calculate total pending receivables
-  const totalReceivablesPending = input.debts.reduce((sum, debt) => {
-    if (debt.type === 'receivable' && debt.status !== 'paid') {
-      return sum + (debt.amount - debt.amountPaid);
+  const totalLoss = input.sales.reduce((sum, sale) => {
+    if (sale.isLoss) {
+      const product = input.products.find(p => p.id === sale.productId);
+      const { cost: unitCost } = calculateUnitCost(product);
+      return sum + (unitCost * sale.quantitySold);
     }
     return sum;
   }, 0);
+
+  const productDetails = input.products.map(product => {
+    const lastSale = input.sales
+      .filter(s => s.productId === product.id && !s.isLoss)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
+    
+    const { cost: unitCost } = calculateUnitCost(product);
+    const lastSalePrice = lastSale ? lastSale.saleValue / lastSale.quantitySold : undefined;
+    const potentialProfit = lastSalePrice ? (lastSalePrice - unitCost) * product.quantity : undefined;
+
+    const currentProfit = input.sales
+      .filter(s => s.productId === product.id && !s.isLoss)
+      .reduce((sum, sale) => sum + (sale.profit ?? 0), 0);
+
+    const totalLoss = input.sales
+      .filter(s => s.productId === product.id && s.isLoss)
+      .reduce((sum, sale) => {
+        const { cost: unitCost } = calculateUnitCost(product);
+        return sum + (unitCost * sale.quantitySold);
+      }, 0);
+
+    return {
+      productId: product.id,
+      productName: product.name,
+      remainingQuantity: product.quantity,
+      lastSalePrice,
+      potentialProfit,
+      currentProfit,
+      totalLoss,
+    };
+  });
 
   // Prepare data for the prompt, including calculated values
   const promptData: FinancialAnalysisPromptInput = {
@@ -61,13 +101,16 @@ export async function analyzeFinances(
     debts: input.debts,
     currencySymbol,
     currencyCode: input.currencyCode,
+    currentDate: new Date().toISOString(),
     calculated: {
       approxAssets,
       approxLiabilities, // This is totalPayablesPending
       approxNetWorth,
       totalReceivablesPending,
       totalPayablesPending: approxLiabilities, // Reuse calculated liabilities
+      totalLoss,
     },
+    productDetails,
   };
 
   // Call the Genkit flow
@@ -87,27 +130,31 @@ const prompt = ai.definePrompt({
   prompt: `Você é um consultor financeiro especialista em pequenos negócios. Analise os dados financeiros fornecidos.
 
 Dados Fornecidos:
+- Data Atual: {{{currentDate}}}
 - Moeda: {{{currencyCode}}} (Símbolo: {{{currencySymbol}}})
 - Produtos (Estoque Atual): {{json products}}
 - Transações (Vendas e Perdas): {{json sales}}
 - Dívidas (A Receber e A Pagar): {{json debts}}
 - Cálculos Prévios (Aproximados): {{json calculated}}
-  - approxAssets: Valor estimado do estoque atual.
+  - approxAssets: Valor estimado dos ativos (estoque atual + contas a receber).
   - approxLiabilities: Total de dívidas a pagar pendentes.
   - approxNetWorth: Patrimônio líquido estimado (Ativos - Passivos).
   - totalReceivablesPending: Total de dívidas a receber pendentes.
   - totalPayablesPending: Total de dívidas a pagar pendentes (igual a approxLiabilities).
+  - totalLoss: Valor total de perdas.
+- Detalhes do Produto: {{json productDetails}}
 
 Sua Tarefa:
 Com base nos dados fornecidos, gere uma análise financeira detalhada no formato JSON especificado. Siga estritamente a estrutura de saída definida (omitindo o campo 'disclaimer').
 
 1.  **Resumo Patrimonial (balanceSheetSummary):**
-    *   Use os valores pré-calculados para 'approxAssets', 'approxLiabilities', e 'approxNetWorth'.
+    *   Use os valores pré-calculados para 'approxAssets', 'approxLiabilities', 'approxNetWorth' e 'totalLoss'.
     *   Escreva um 'summary' breve da situação, indicando se o patrimônio é positivo ou negativo e o que isso significa de forma simples.
 
 2.  **Análise de Dívidas (debtAnalysis):**
     *   Use os valores pré-calculados 'totalReceivablesPending' e 'totalPayablesPending'.
     *   Analise a proporção entre contas a receber e a pagar no campo 'analysis'. Há risco de fluxo de caixa? Comente sobre a saúde das dívidas.
+    *   Considere a 'currentDate' para identificar dívidas vencidas e o risco associado.
 
 3.  **Avaliação de Riscos (riskAssessment):**
     *   Identifique os principais riscos ('identifiedRisks') com base nos dados. Exemplos: alto volume de perdas em produtos específicos, lucro baixo ou negativo, dívidas a pagar muito altas comparadas às a receber, estoque parado (produtos sem vendas recentes - inferir se possível), dependência de poucos produtos rentáveis.
@@ -117,7 +164,11 @@ Com base nos dados fornecidos, gere uma análise financeira detalhada no formato
     *   Sugira ações concretas e práticas ('suggestions') para o usuário. Exemplos: renegociar dívidas a pagar, focar em produtos mais rentáveis, estratégias para reduzir perdas, promoções para limpar estoque parado, melhorar controle de contas a receber.
     *   Indique quais ações seriam mais prioritárias em 'priorities'.
 
-5.  **Status Geral (overallStatus):**
+5.  **Análise de Produto (productAnalysis):**
+    *   Para cada produto em 'productDetails', crie um objeto correspondente em 'productAnalysis'.
+    *   Preencha 'productId', 'productName', 'remainingQuantity', 'lastSalePrice', 'potentialProfit', 'currentProfit' e 'totalLoss' com base nos dados de 'productDetails'.
+
+6.  **Status Geral (overallStatus):**
     *   Classifique a saúde financeira geral como 'healthy', 'needs_attention', ou 'critical'.
 
 Seja claro, objetivo e use uma linguagem acessível para um pequeno empreendedor. Baseie TODA a análise **exclusivamente** nos dados fornecidos. Não invente informações. Se os dados forem insuficientes para alguma parte da análise, mencione isso explicitamente no texto correspondente (summary, analysis, assessment, recommendations).`,

@@ -110,9 +110,18 @@ export default function AppHeader() {
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center justify-between">
         <div className="flex items-center gap-4 md:gap-6">
-          <Link href="/" className="text-lg ml-2 font-semibold text-primary-foreground mr-4 whitespace-nowrap"> {/* Adjusted text size and wrap */}
-            Dyfinzo
-          </Link>
+                    <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link href="/" className="text-lg ml-2 font-semibold text-primary-foreground mr-4 whitespace-nowrap">
+                  SIGEF
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Sistema Interativo de Gestão Financeira</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
           {/* Desktop Navigation */}
           <Tabs value={getActiveTab()} className="hidden md:block">
             <TabsList>

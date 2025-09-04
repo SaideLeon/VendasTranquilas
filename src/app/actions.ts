@@ -250,7 +250,7 @@ export async function getDebts(): Promise<Debt[]> {
 export async function addDebt(debtData: Omit<Debt, 'id' | 'createdAt' | 'status' | 'amountPaid'>): Promise<Debt | null> {
    const newDebtData = {
         ...debtData,
-        status: 'pending' as DebtStatus, // Default status
+        status: 'PENDING' as DebtStatus, // Default status
         amountPaid: 0, // Default amount paid
         // id and createdAt handled by Prisma/DB
         dueDate: debtData.dueDate ? new Date(debtData.dueDate) : null, // Convert string to Date for Prisma

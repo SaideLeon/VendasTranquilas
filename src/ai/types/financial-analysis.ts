@@ -34,7 +34,7 @@ const DebtSchema = z.object({
   amount: z.number(),
   amountPaid: z.number(),
   dueDate: z.string().datetime().optional().nullable(),
-  status: z.enum(['pending', 'paid', 'partially_paid']),
+  status: z.enum(['PENDING', 'PAID', 'PARTIALLY_PAID']),
   contactName: z.string().optional(),
   createdAt: z.string().datetime(),
   paidAt: z.string().datetime().optional().nullable(),
@@ -57,13 +57,22 @@ export const FinancialAnalysisPromptInputSchema = z.object({
   debts: z.array(DebtSchema),
   currencySymbol: z.string(),
   currencyCode: z.string(),
+  currentDate: z.string().datetime(),
   calculated: z.object({
     approxAssets: z.number(),
     approxLiabilities: z.number(),
     approxNetWorth: z.number(),
     totalReceivablesPending: z.number(),
     totalPayablesPending: z.number(),
+    totalLoss: z.number(),
   }),
+  productDetails: z.array(z.object({
+    productId: z.string(),
+    productName: z.string(),
+    remainingQuantity: z.number(),
+    lastSalePrice: z.number().optional(),
+    potentialProfit: z.number().optional(),
+  })),
 });
 export type FinancialAnalysisPromptInput = z.infer<typeof FinancialAnalysisPromptInputSchema>;
 
@@ -75,6 +84,7 @@ export const FinancialAnalysisOutputSchema = z.object({
     approxLiabilities: z.number().describe('Estimated total value of pending liabilities (debts to pay).'),
     approxNetWorth: z.number().describe('Estimated net worth (Assets - Liabilities).'),
     summary: z.string().describe('A brief textual summary of the balance sheet situation.'),
+    totalLoss: z.number().describe('Total loss value from sales marked as loss.'),
   }),
   debtAnalysis: z.object({
     totalReceivablesPending: z.number().describe('Total amount pending to be received from customers/debtors.'),
@@ -89,6 +99,15 @@ export const FinancialAnalysisOutputSchema = z.object({
     suggestions: z.array(z.string()).describe('Actionable suggestions for improvement based on the analysis.'),
     priorities: z.string().describe('Indication of which recommendations should be prioritized.'),
   }),
+  productAnalysis: z.array(z.object({
+    productId: z.string(),
+    productName: z.string(),
+    remainingQuantity: z.number(),
+    lastSalePrice: z.number().optional(),
+    potentialProfit: z.number().optional(),
+    currentProfit: z.number(),
+    totalLoss: z.number(),
+  })).describe('Detailed analysis for each product.'),
   overallStatus: z.enum(['healthy', 'needs_attention', 'critical']).describe('Overall financial health status.'),
   disclaimer: z.string().describe('Standard disclaimer about the AI-generated nature of the analysis.'),
 });

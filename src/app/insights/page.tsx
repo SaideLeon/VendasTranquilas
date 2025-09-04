@@ -14,6 +14,14 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
   Accordion,
   AccordionContent,
   AccordionItem,
@@ -33,10 +41,15 @@ import {
   CircleAlert,
   CircleX,
   RefreshCw, // Import the sync icon
+  Package,
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/currency-utils';
 import { Badge } from '@/components/ui/badge';
 import { TooltipProvider } from "@/components/ui/tooltip";
+
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+
+type ProductAnalysisDetail = FinancialAnalysisOutput['productAnalysis'][0];
 
 export default function InsightsPage() {
   const { products, sales, debts, currency, initializeData } = useStore(); // Get initializeData from store
@@ -45,6 +58,8 @@ export default function InsightsPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false); // State for sync button
   const [error, setError] = useState<string | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<ProductAnalysisDetail | null>(null);
+  const [showLosses, setShowLosses] = useState(false);
 
   const handleAnalyze = async () => {
     setIsLoading(true);
@@ -130,6 +145,8 @@ export default function InsightsPage() {
     }
   };
 
+  const productLosses = selectedProduct ? sales.filter(s => s.productId === selectedProduct.productId && s.isLoss) : [];
+
   // Ensure no syntax errors before the return statement
   return (
     <TooltipProvider>
@@ -203,7 +220,7 @@ export default function InsightsPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Accordion type="multiple" defaultValue={['balance', 'risks', 'recommendations']} className="w-full">
+              <Accordion type="multiple" defaultValue={['balance', 'risks', 'recommendations', 'products']} className="w-full">
                 {/* Balance Sheet */}
                 <AccordionItem value="balance">
                   <AccordionTrigger className="text-lg font-semibold">
@@ -213,7 +230,7 @@ export default function InsightsPage() {
                     <p className="text-sm text-muted-foreground">
                       {analysisResult.balanceSheetSummary.summary}
                     </p>
-                    <div className="grid grid-cols-3 gap-4 text-center">
+                    <div className="grid grid-cols-4 gap-4 text-center">
                       <div>
                         <p className="text-xs text-muted-foreground">Ativos (Estoque)</p>
                         <p className="font-semibold text-green-600">
@@ -224,6 +241,12 @@ export default function InsightsPage() {
                         <p className="text-xs text-muted-foreground">Passivos (Dívidas)</p>
                         <p className="font-semibold text-red-600">
                           {formatValue(analysisResult.balanceSheetSummary.approxLiabilities)}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Perdas Totais</p>
+                        <p className="font-semibold text-red-600">
+                          {formatValue(analysisResult.balanceSheetSummary.totalLoss)}
                         </p>
                       </div>
                       <div>
@@ -258,6 +281,27 @@ export default function InsightsPage() {
                           {formatValue(analysisResult.debtAnalysis.totalPayablesPending)}
                         </p>
                       </div>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+
+                {/* Product Analysis */}
+                <AccordionItem value="products">
+                  <AccordionTrigger className="text-lg font-semibold">
+                    <Package className="h-5 w-5 mr-2" /> Análise de Produtos
+                  </AccordionTrigger>
+                  <AccordionContent className="space-y-3 pl-2">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {analysisResult.productAnalysis.map(p => (
+                        <Card key={p.productId}>
+                          <CardHeader>
+                            <CardTitle>{p.productName}</CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <Button onClick={() => setSelectedProduct(p)}>Ver mais detalhes</Button>
+                          </CardContent>
+                        </Card>
+                      ))}
                     </div>
                   </AccordionContent>
                 </AccordionItem>
@@ -308,6 +352,75 @@ export default function InsightsPage() {
           </Card>
         )}
       </div>
+      {selectedProduct && (
+        <Dialog open={!!selectedProduct} onOpenChange={(isOpen) => !isOpen && setSelectedProduct(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{selectedProduct.productName}</DialogTitle>
+              <DialogDescription>
+                Análise detalhada do produto.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <p className="col-span-1 text-sm text-muted-foreground">Estoque Restante</p>
+                <p className="col-span-3 font-semibold">{selectedProduct.remainingQuantity} unidades</p>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <p className="col-span-1 text-sm text-muted-foreground">Último Preço de Venda</p>
+                <p className="col-span-3 font-semibold">{formatValue(selectedProduct.lastSalePrice)}</p>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <p className="col-span-1 text-sm text-muted-foreground">Lucro Potencial</p>
+                <p className="col-span-3 font-semibold">{formatValue(selectedProduct.potentialProfit)}</p>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <p className="col-span-1 text-sm text-muted-foreground">Lucro Atual</p>
+                <p className="col-span-3 font-semibold">{formatValue(selectedProduct.currentProfit)}</p>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <p className="col-span-1 text-sm text-muted-foreground">Prejuízo Total</p>
+                <p className="col-span-3 font-semibold">{formatValue(selectedProduct.totalLoss)}</p>
+              </div>
+              {selectedProduct.totalLoss > 0 && (
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <p className="col-span-1 text-sm text-muted-foreground"></p>
+                  <Button variant="link" className="col-span-3" onClick={() => setShowLosses(true)}>Ver detalhes do prejuízo</Button>
+                </div>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+      {selectedProduct && showLosses && (
+        <Dialog open={showLosses} onOpenChange={(isOpen) => !isOpen && setShowLosses(false)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Detalhes do Prejuízo - {selectedProduct.productName}</DialogTitle>
+            </DialogHeader>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Data</TableHead>
+                  <TableHead>Quantidade</TableHead>
+                  <TableHead>Valor da Perda</TableHead>
+                  <TableHead>Motivo</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {productLosses.map(loss => (
+                  <TableRow key={loss.id}>
+                    <TableCell>{new Date(loss.createdAt).toLocaleDateString()}</TableCell>
+                    <TableCell>{loss.quantitySold}</TableCell>
+                    <TableCell>{formatValue(loss.saleValue)}</TableCell>
+                    <TableCell>{loss.lossReason}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </DialogContent>
+        </Dialog>
+      )}
     </TooltipProvider>
   );
 }
