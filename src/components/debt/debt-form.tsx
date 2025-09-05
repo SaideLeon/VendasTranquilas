@@ -37,6 +37,7 @@ import { formatCurrency } from "@/lib/currency-utils"; // Use the utility
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/lib/db';
 import { v4 as uuidv4 } from 'uuid';
+import { useSession } from 'next-auth/react';
 
 // Base schema without amountPaid (handled in edit)
 const formSchema = z.object({
@@ -76,6 +77,7 @@ interface DebtFormProps {
 const NONE_VALUE = "__none__";
 
 export default function DebtForm({ initialData, onCancel }: DebtFormProps) {
+  const { data: session } = useSession();
   const { currency } = useStore(); // Get sales for linking
   const sales = useLiveQuery(() => db.sales.toArray(), []);
   const currencyConfig = getCurrencyConfig(currency);
@@ -131,6 +133,7 @@ export default function DebtForm({ initialData, onCancel }: DebtFormProps) {
   }, [initialData, form]);
 
   const handleFormSubmit = async (values: DebtFormData | EditDebtFormData) => {
+      if (!session?.user?.id) return;
       // Convert dueDate back to ISO string or null before submitting
       const dataToSubmit = {
           ...values,
@@ -150,6 +153,7 @@ export default function DebtForm({ initialData, onCancel }: DebtFormProps) {
         // Add new debt
         const newDebt: Debt = {
           id: uuidv4(),
+          userId: session.user.id,
           ...dataToSubmit,
           status: 'pending',
           amountPaid: 0,
