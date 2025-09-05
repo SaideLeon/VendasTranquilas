@@ -36,7 +36,7 @@ export default function ProdutosPage() {
              ...data,
              initialQuantity: data.initialQuantity ?? data.quantity
          };
-        addProduct(productDataWithInitialQty as Omit<Product, 'id' | 'createdAt'>); // Type assertion needed if initialQuantity might be missing
+        addProduct(productDataWithInitialQty); // Type assertion no longer needed
         toast({
           title: "Produto Adicionado",
           description: `"${data.name}" foi adicionado com sucesso.`,

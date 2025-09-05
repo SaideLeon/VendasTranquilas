@@ -24,10 +24,10 @@ export class MySubclassedDexie extends Dexie {
 
   constructor() {
     super('sigefDatabase');
-    this.version(1).stores({
-      products: '++id, name, pending',
-      sales: '++id, productId, productName, pending',
-      debts: '++id, type, status, pending',
+    this.version(2).stores({
+      products: '++id, name, userId, pending',
+      sales: '++id, productId, productName, userId, pending',
+      debts: '++id, type, status, userId, pending',
     });
   }
 }

@@ -1,5 +1,6 @@
 export interface Product {
   id: string;
+  userId: string;
   name: string;
     acquisitionValue: number; // Total acquisition value for the initial quantity
     quantity: number; // Current quantity in stock
@@ -21,6 +22,7 @@ export interface ExportData {
 
 export interface Sale {
   id: string;
+  userId: string;
   productId: string;
   productName: string; // Denormalized for easier display
   quantitySold: number;
@@ -39,6 +41,7 @@ export type DebtStatus = 'pending' | 'paid' | 'partially_paid'; // Added partial
 
 export interface Debt {
     id: string;
+    userId: string;
     type: DebtType; // 'receivable' or 'payable'
     description: string;
     amount: number;

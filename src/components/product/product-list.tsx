@@ -40,6 +40,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useSession } from 'next-auth/react';
 
 
 interface ProductListProps {
@@ -48,8 +49,11 @@ interface ProductListProps {
 }
 
 export default function ProductList({ onEdit, onViewDetails }: ProductListProps) {
-  const products = useLiveQuery(() => db.products.where('deleted').notEqual(true).toArray(), []);
-  console.log('Products from Dexie:', products);
+  const { data: session } = useSession();
+  const products = useLiveQuery(() => {
+    if (!session?.user?.id) return [];
+    return db.products.where('userId').equals(session.user.id).and(p => !p.deleted).toArray();
+  }, [session]);
   const [searchTerm, setSearchTerm] = useState('');
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
   const { currency } = useStore(); // Get current currency
@@ -198,7 +202,7 @@ export default function ProductList({ onEdit, onViewDetails }: ProductListProps)
                                                 <AlertDialogFooter>
                                                     <AlertDialogCancel onClick={() => setProductToDelete(null)}>Cancelar</AlertDialogCancel>
                                                     <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/90">Excluir</AlertDialogAction>
-                                                </AlertDialogFooter>
+                                                </Footer>
                                             </AlertDialogContent>
                                         </AlertDialog>
                                     </TableCell>

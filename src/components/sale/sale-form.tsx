@@ -35,6 +35,7 @@ import { formatCurrency } from "@/lib/currency-utils"; // Import formatting util
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/lib/db';
 import { v4 as uuidv4 } from 'uuid';
+import { useSession } from 'next-auth/react';
 
 const formSchema = z.object({
   productId: z.string().min(1, { message: "Selecione um produto." }),
@@ -62,8 +63,12 @@ const formSchema = z.object({
 type SaleFormData = z.infer<typeof formSchema>;
 
 export default function SaleForm() {
+  const { data: session } = useSession();
   const { currency } = useStore(); // Get products and currency
-  const products = useLiveQuery(() => db.products.toArray(), []);
+  const products = useLiveQuery(() => {
+    if (!session?.user?.id) return [];
+    return db.products.where('userId').equals(session.user.id).toArray();
+  }, [session]);
   const currencyConfig = getCurrencyConfig(currency);
   const currencySymbol = currencyConfig?.symbol || currency; // Fallback to code
 
@@ -122,6 +127,8 @@ export default function SaleForm() {
 
 
   const handleFormSubmit = async (values: SaleFormData) => {
+    if (!session?.user?.id) return;
+
     const product = await db.products.get(values.productId);
     if (!product) return;
 
@@ -132,11 +139,11 @@ export default function SaleForm() {
 
     const newSale: Sale = {
       id: uuidv4(),
+      userId: session.user.id,
       ...values,
       productName: product.name,
       profit,
       createdAt: new Date().toISOString(),
-      // @ts-ignore
       updatedAt: new Date().toISOString(),
     };
 
