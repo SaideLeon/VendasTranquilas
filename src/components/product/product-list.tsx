@@ -49,6 +49,7 @@ interface ProductListProps {
 
 export default function ProductList({ onEdit, onViewDetails }: ProductListProps) {
   const products = useLiveQuery(() => db.products.where('deleted').notEqual(true).toArray(), []);
+  console.log('Products from Dexie:', products);
   const [searchTerm, setSearchTerm] = useState('');
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
   const { currency } = useStore(); // Get current currency
