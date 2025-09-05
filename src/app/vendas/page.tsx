@@ -5,21 +5,23 @@ import SaleForm from '@/components/sale/sale-form';
 import SalesList from '@/components/sale/sales-list';
 import SaleDetailsModal from '@/components/sale/sale-details-modal'; // Import the modal
 import { useStore } from '@/store/store';
-import type { Sale } from '@/types';
+import type { Product, Sale } from '@/types';
 import { useToast } from "@/hooks/use-toast";
 import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
+import { db } from '@/lib/db';
 
 export default function VendasPage() {
-  const { sales, addSale, deleteSale, products, getProductById } = useStore(); // Added getProductById
+  const { sales, addSale, deleteSale, products } = useStore();
   const [isFormVisible, setIsFormVisible] = useState(false); // Control form visibility
   const [viewingSale, setViewingSale] = useState<Sale | null>(null); // State for viewing sale details
+  const [viewingProduct, setViewingProduct] = useState<Product | undefined>(undefined);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false); // State for modal visibility
   const { toast } = useToast();
 
-   const handleFormSubmit = async (data: Omit<Sale, 'id' | 'profit' | 'productName' | 'createdAt'>) => {
+   const handleFormSubmit = async (data: Omit<Sale, 'id' | 'profit' | 'productName' | 'createdAt' | 'userId'>) => {
     try {
-        const result = addSale(data);
+        const result = await addSale(data);
         if (result) {
              toast({
                  title: data.isLoss ? "Perda Registrada" : "Venda Registrada",
@@ -28,8 +30,6 @@ export default function VendasPage() {
              setIsFormVisible(false); // Hide form on mobile after success
              return true; // Indicate success
         } else {
-             // Sale might fail due to insufficient stock (already handled by schema)
-             // Or product not found (shouldn't happen with select)
              toast({
                 title: "Erro ao Registrar",
                 description: "Não foi possível registrar a venda/perda. Verifique o estoque.",
@@ -72,7 +72,9 @@ export default function VendasPage() {
      }
   };
 
-   const handleViewDetails = (sale: Sale) => {
+   const handleViewDetails = async (sale: Sale) => {
+       const product = await db.products.get(sale.productId);
+       setViewingProduct(product);
        setViewingSale(sale);
        setIsDetailsModalOpen(true);
    };
@@ -99,7 +101,7 @@ export default function VendasPage() {
       {/* Form Section */}
        <div className={`${isFormVisible ? 'block' : 'hidden'} md:block`}>
            {hasProducts ? (
-                <SaleForm onSubmit={handleFormSubmit} />
+                <SaleForm />
            ) : (
                 <div className="text-center text-muted-foreground p-8 border rounded-md bg-card">
                    Por favor, cadastre produtos na aba "Produtos" antes de registrar vendas.
@@ -109,7 +111,6 @@ export default function VendasPage() {
 
       {/* List Section */}
       <SalesList
-          sales={sales}
           onDelete={handleDelete}
           onViewDetails={handleViewDetails} // Pass the handler
       />
@@ -118,7 +119,7 @@ export default function VendasPage() {
        {viewingSale && (
            <SaleDetailsModal
              sale={viewingSale}
-             product={getProductById(viewingSale.productId)} // Pass product details
+             product={viewingProduct}
              isOpen={isDetailsModalOpen}
              onClose={() => setIsDetailsModalOpen(false)}
            />

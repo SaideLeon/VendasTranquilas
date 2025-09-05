@@ -11,9 +11,10 @@ import DebtList from '@/components/debt/debt-list';
 import DebtDetailsModal from '@/components/debt/debt-details-modal';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { db } from '@/lib/db';
 
 export default function DividasPage() {
-  const { debts, addDebt, updateDebt, deleteDebt, getDebtById } = useStore();
+  const { deleteDebt } = useStore();
   const [isMounted, setIsMounted] = useState(false);
   const [isFormVisible, setIsFormVisible] = useState(false);
   const [editingDebt, setEditingDebt] = useState<Debt | null>(null);
@@ -25,41 +26,6 @@ export default function DividasPage() {
     setIsMounted(true);
   }, []);
 
-  const handleFormSubmit = (data: Omit<Debt, 'id' | 'createdAt' | 'status' | 'amountPaid'> & { 
-    amountPaid?: number; 
-    status?: Debt['status'] 
-  }) => {
-    try {
-      if (editingDebt) {
-        const updates: Partial<Omit<Debt, 'id' | 'createdAt'>> = {
-          ...data,
-          amountPaid: data.amountPaid ?? editingDebt.amountPaid,
-        };
-        updateDebt(editingDebt.id, updates);
-        toast({
-          title: "Dívida Atualizada",
-          description: `Registro de "${data.description}" atualizado.`,
-        });
-        setEditingDebt(null);
-        setIsFormVisible(false);
-      } else {
-        addDebt(data);
-        toast({
-          title: "Dívida Adicionada",
-          description: `Registro de "${data.description}" adicionado com sucesso.`,
-        });
-        setIsFormVisible(false);
-      }
-    } catch (error) {
-      console.error("Error saving debt:", error);
-      toast({
-        title: "Erro ao Salvar",
-        description: "Não foi possível salvar o registro de dívida.",
-        variant: "destructive",
-      });
-    }
-  };
-
   const handleEdit = (debt: Debt) => {
     setEditingDebt(debt);
     setIsFormVisible(true);
@@ -68,10 +34,10 @@ export default function DividasPage() {
     }
   };
 
-  const handleDelete = (debtId: string) => {
+  const handleDelete = async (debtId: string) => {
     try {
-      const debtToDelete = getDebtById(debtId);
-      deleteDebt(debtId);
+      const debtToDelete = await db.debts.get(debtId);
+      await deleteDebt(debtId);
       toast({
         title: "Dívida Excluída",
         description: `Registro "${debtToDelete?.description}" excluído.`,
@@ -107,9 +73,6 @@ export default function DividasPage() {
     setIsFormVisible(!isFormVisible);
   };
 
-  const receivables = debts.filter(d => d.type === 'receivable');
-  const payables = debts.filter(d => d.type === 'payable');
-
   if (!isMounted) return null;
 
   return (
@@ -128,7 +91,6 @@ export default function DividasPage() {
       <div className={`mb-8 ${isFormVisible ? 'block' : 'hidden'} md:block`}>
         <DebtForm
           key={editingDebt?.id || 'new'}
-          onSubmit={handleFormSubmit}
           initialData={editingDebt}
           onCancel={() => {
             setEditingDebt(null);
@@ -139,29 +101,25 @@ export default function DividasPage() {
 
       <Tabs defaultValue="receivable" className="w-full">
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="receivable">A Receber ({receivables.length})</TabsTrigger>
-          <TabsTrigger value="payable">A Pagar ({payables.length})</TabsTrigger>
+          <TabsTrigger value="receivable">A Receber</TabsTrigger>
+          <TabsTrigger value="payable">A Pagar</TabsTrigger>
         </TabsList>
 
         <TabsContent value="receivable">
           <DebtList
             title="Contas a Receber"
-            debts={receivables}
             onEdit={handleEdit}
             onDelete={handleDelete}
             onViewDetails={handleViewDetails}
-            onUpdate={updateDebt}
           />
         </TabsContent>
 
         <TabsContent value="payable">
           <DebtList
             title="Contas a Pagar"
-            debts={payables}
             onEdit={handleEdit}
             onDelete={handleDelete}
             onViewDetails={handleViewDetails}
-            onUpdate={updateDebt}
           />
         </TabsContent>
       </Tabs>
