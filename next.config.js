@@ -1,3 +1,10 @@
+const withPWA = require('next-pwa')({
+  dest: 'public',
+  register: true,
+  skipWaiting: true,
+  disable: process.env.NODE_ENV === 'development',
+});
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // reactStrictMode: true, // Strict Mode is recommended and default in Next.js 14+
@@ -29,4 +36,4 @@ const nextConfig = {
    // },
 };
 
-module.exports = nextConfig; // Use module.exports for .js file
+module.exports = withPWA(nextConfig);

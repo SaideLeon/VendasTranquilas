@@ -32,7 +32,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ShoppingCart, AlertTriangle } from "lucide-react";
 import { getCurrencyConfig } from "@/config/currencies"; // Import currency config
 import { formatCurrency } from "@/lib/currency-utils"; // Import formatting util
-
+import { useLiveQuery } from 'dexie-react-hooks';
+import { db } from '@/lib/db';
+import { v4 as uuidv4 } from 'uuid';
 
 const formSchema = z.object({
   productId: z.string().min(1, { message: "Selecione um produto." }),
@@ -47,9 +49,9 @@ const formSchema = z.object({
 }).refine(data => !data.isLoss || (data.isLoss && data.lossReason && data.lossReason.trim().length > 0), { // Ensure reason is not just whitespace
     message: "O motivo da perda é obrigatório ao registrar um prejuízo.",
     path: ["lossReason"], // path of error
-}).refine(data => {
+}).refine(async (data) => {
      // Check stock (for both sales and losses, as the item is removed from inventory)
-     const product = useStore.getState().getProductById(data.productId);
+     const product = await db.products.get(data.productId);
      // Check against current quantity (product.quantity)
      return product && product.quantity >= data.quantitySold;
  }, {
@@ -57,16 +59,11 @@ const formSchema = z.object({
     path: ["quantitySold"],
  });
 
-
 type SaleFormData = z.infer<typeof formSchema>;
 
-interface SaleFormProps {
-  onSubmit: (data: SaleFormData) => boolean | Promise<boolean>; // Return true if successful to reset form
-  isLoading?: boolean;
-}
-
-export default function SaleForm({ onSubmit, isLoading = false }: SaleFormProps) {
-  const { products, currency } = useStore(); // Get products and currency
+export default function SaleForm() {
+  const { currency } = useStore(); // Get products and currency
+  const products = useLiveQuery(() => db.products.toArray(), []);
   const currencyConfig = getCurrencyConfig(currency);
   const currencySymbol = currencyConfig?.symbol || currency; // Fallback to code
 
@@ -86,7 +83,7 @@ export default function SaleForm({ onSubmit, isLoading = false }: SaleFormProps)
    const watchQuantitySold = form.watch("quantitySold");
 
    const selectedProduct = React.useMemo(() => {
-       return products.find(p => p.id === watchProductId);
+       return products?.find(p => p.id === watchProductId);
    }, [watchProductId, products]);
 
    const { cost: unitCost } = calculateUnitCost(selectedProduct); // Calculate unit cost
@@ -125,17 +122,38 @@ export default function SaleForm({ onSubmit, isLoading = false }: SaleFormProps)
 
 
   const handleFormSubmit = async (values: SaleFormData) => {
-    const success = await onSubmit(values);
-    if (success) {
-        form.reset(); // Reset form after successful submission
-        // Manually reset productId in select if needed, though form.reset should handle it
-         form.setValue('productId', '');
-    }
+    const product = await db.products.get(values.productId);
+    if (!product) return;
+
+    const { cost: unitCost } = calculateUnitCost(product);
+    const profit = values.isLoss
+      ? -(unitCost * values.quantitySold)
+      : values.saleValue - unitCost * values.quantitySold;
+
+    const newSale: Sale = {
+      id: uuidv4(),
+      ...values,
+      productName: product.name,
+      profit,
+      createdAt: new Date().toISOString(),
+      // @ts-ignore
+      updatedAt: new Date().toISOString(),
+    };
+
+    await db.sales.add({ ...newSale, pending: true });
+
+    // Also update the product quantity in Dexie
+    await db.products.update(product.id, {
+      quantity: product.quantity - values.quantitySold,
+      pending: true,
+    });
+
+    form.reset();
   };
 
    // Products available for selection (always check current quantity > 0, unless it's a loss)
    // Allow selecting OOS for loss registration, but maybe disable submit button? (Handled by Zod refine now)
-   const availableProducts = products; //.filter(p => watchIsLoss || p.quantity > 0);
+   const availableProducts = products || [];
    const hasAvailableProducts = availableProducts.length > 0;
 
 
@@ -159,7 +177,7 @@ export default function SaleForm({ onSubmit, isLoading = false }: SaleFormProps)
                    <Select
                       onValueChange={field.onChange}
                       value={field.value} // Ensure value is controlled
-                      disabled={isLoading || !hasAvailableProducts}
+                      disabled={!hasAvailableProducts}
                     >
                     <FormControl>
                       <SelectTrigger>
@@ -192,7 +210,7 @@ export default function SaleForm({ onSubmit, isLoading = false }: SaleFormProps)
                 <FormItem>
                   <FormLabel>Quantidade Vendida / Perdida</FormLabel>
                   <FormControl>
-                    <Input type="number" step="1" min="1" placeholder="Ex: 1" {...field} disabled={isLoading}/>
+                    <Input type="number" step="1" min="1" placeholder="Ex: 1" {...field} />
                   </FormControl>
                   <FormMessage /> {/* Zod validation message will appear here */}
                 </FormItem>
@@ -213,7 +231,7 @@ export default function SaleForm({ onSubmit, isLoading = false }: SaleFormProps)
                       step="0.01"
                       placeholder={watchIsLoss ? "0.00" : "Ex: 29.90"}
                       {...field}
-                      disabled={isLoading || watchIsLoss}
+                      disabled={watchIsLoss}
                       readOnly={watchIsLoss}
                      />
                   </FormControl>
@@ -241,7 +259,6 @@ export default function SaleForm({ onSubmit, isLoading = false }: SaleFormProps)
                     <Checkbox
                       checked={field.value}
                       onCheckedChange={field.onChange}
-                      disabled={isLoading}
                     />
                   </FormControl>
                   <div className="space-y-1 leading-none">
@@ -268,7 +285,6 @@ export default function SaleForm({ onSubmit, isLoading = false }: SaleFormProps)
                         placeholder="Descreva o motivo da perda (Ex: Produto danificado, Vencido, Furto)"
                         {...field}
                         value={field.value ?? ''} // Ensure value is not null/undefined
-                        disabled={isLoading}
                          />
                     </FormControl>
                     <FormMessage /> {/* Zod validation message will appear here */}
@@ -279,10 +295,10 @@ export default function SaleForm({ onSubmit, isLoading = false }: SaleFormProps)
 
             <Button
                 type="submit"
-                disabled={isLoading || !hasAvailableProducts || !form.formState.isValid} // Disable if form is invalid (e.g., stock issue)
+                disabled={!hasAvailableProducts || !form.formState.isValid}
                 className="w-full bg-accent hover:bg-accent/90"
                 >
-               {isLoading ? "Registrando..." : (watchIsLoss ? "Registrar Perda" : "Registrar Venda")}
+               {watchIsLoss ? "Registrar Perda" : "Registrar Venda"}
             </Button>
           </form>
         </Form>

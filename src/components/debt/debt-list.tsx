@@ -2,6 +2,8 @@
 "use client";
 
 import React, { useState } from 'react';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { db } from '@/lib/db';
 import type { Debt, DebtStatus } from '@/types';
 import {
   Table,
@@ -50,11 +52,8 @@ import { useToast } from '@/hooks/use-toast';
 
 interface DebtListProps {
   title: string;
-  debts: Debt[];
   onEdit: (debt: Debt) => void;
-  onDelete: (debtId: string) => void;
   onViewDetails: (debt: Debt) => void;
-  onUpdate: (debtId: string, updates: Partial<Omit<Debt, 'id' | 'createdAt'>>) => void; // For quick updates
 }
 
 // Helper to get status display properties
@@ -70,7 +69,8 @@ const getStatusProps = (status: DebtStatus): { text: string; color: string; icon
     }
 };
 
-export default function DebtList({ title, debts, onEdit, onDelete, onViewDetails, onUpdate }: DebtListProps) {
+export default function DebtList({ title, onEdit, onViewDetails }: DebtListProps) {
+  const debts = useLiveQuery(() => db.debts.where('deleted').notEqual(true).toArray(), []);
   const [searchTerm, setSearchTerm] = useState('');
   const [debtToDelete, setDebtToDelete] = useState<Debt | null>(null);
   const [quickPayAmount, setQuickPayAmount] = useState<number | string>(''); // For quick pay input
@@ -79,6 +79,7 @@ export default function DebtList({ title, debts, onEdit, onDelete, onViewDetails
   const { toast } = useToast();
 
   const filteredDebts = React.useMemo(() => {
+    if (!debts) return [];
     const lowerSearchTerm = searchTerm.toLowerCase();
     return debts.filter((debt) =>
       debt.description.toLowerCase().includes(lowerSearchTerm) ||
@@ -103,9 +104,9 @@ export default function DebtList({ title, debts, onEdit, onDelete, onViewDetails
     setDebtToDelete(debt);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (debtToDelete) {
-      onDelete(debtToDelete.id);
+      await db.debts.update(debtToDelete.id, { pending: true, deleted: true });
       setDebtToDelete(null);
     }
   };
@@ -114,7 +115,7 @@ export default function DebtList({ title, debts, onEdit, onDelete, onViewDetails
        setQuickPayAmount(e.target.value);
    };
 
-  const handleQuickPaySubmit = (debtId: string, currentPaid: number, totalAmount: number) => {
+  const handleQuickPaySubmit = async (debtId: string, currentPaid: number, totalAmount: number) => {
         const amount = parseFloat(quickPayAmount as string);
         if (isNaN(amount) || amount <= 0) {
             toast({ title: "Valor Inválido", description: "Por favor, insira um valor de pagamento válido.", variant: "destructive" });
@@ -128,7 +129,7 @@ export default function DebtList({ title, debts, onEdit, onDelete, onViewDetails
         }
 
         try {
-            onUpdate(debtId, { amountPaid: newAmountPaid });
+            await db.debts.update(debtId, { amountPaid: newAmountPaid, pending: true, updatedAt: new Date().toISOString() });
             toast({ title: "Pagamento Registrado", description: `Pagamento de ${formatValue(amount)} registrado para ${debtId}.` });
             setQuickPayAmount(''); // Clear input
             setQuickPayDebtId(null); // Close quick pay section
@@ -138,9 +139,9 @@ export default function DebtList({ title, debts, onEdit, onDelete, onViewDetails
     };
 
 
-   const handleMarkAsPaid = (debt: Debt) => {
+   const handleMarkAsPaid = async (debt: Debt) => {
        try {
-           onUpdate(debt.id, { amountPaid: debt.amount }); // Set amount paid to total amount
+           await db.debts.update(debt.id, { amountPaid: debt.amount, status: 'paid', pending: true, updatedAt: new Date().toISOString() }); // Set amount paid to total amount
            toast({ title: "Dívida Quitada", description: `Dívida "${debt.description}" marcada como paga.` });
        } catch (error) {
            toast({ title: "Erro ao Quitar Dívida", description: "Não foi possível marcar a dívida como paga.", variant: "destructive" });
@@ -154,7 +155,7 @@ export default function DebtList({ title, debts, onEdit, onDelete, onViewDetails
         <CardTitle className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <HandCoins className="h-5 w-5 text-primary-foreground" />
-            {title} ({debts.length})
+            {title} ({debts?.length || 0})
           </div>
           <div className="relative ml-auto flex-1 md:grow-0">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />

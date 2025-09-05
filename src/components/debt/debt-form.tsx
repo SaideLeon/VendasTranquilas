@@ -34,6 +34,9 @@ import { getCurrencyConfig } from "@/config/currencies";
 import { format, parseISO } from 'date-fns'; // Import date-fns functions
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/currency-utils"; // Use the utility
+import { useLiveQuery } from 'dexie-react-hooks';
+import { db } from '@/lib/db';
+import { v4 as uuidv4 } from 'uuid';
 
 // Base schema without amountPaid (handled in edit)
 const formSchema = z.object({
@@ -65,17 +68,16 @@ type DebtFormData = z.infer<typeof formSchema>;
 type EditDebtFormData = z.infer<typeof editFormSchema>;
 
 interface DebtFormProps {
-  onSubmit: (data: DebtFormData | EditDebtFormData) => void;
   initialData?: Debt | null;
   onCancel: () => void; // Function to handle cancellation
-  isLoading?: boolean;
 }
 
 // Define a constant for the "None" value to avoid magic strings
 const NONE_VALUE = "__none__";
 
-export default function DebtForm({ onSubmit, initialData, onCancel, isLoading = false }: DebtFormProps) {
-  const { currency, sales } = useStore(); // Get sales for linking
+export default function DebtForm({ initialData, onCancel }: DebtFormProps) {
+  const { currency } = useStore(); // Get sales for linking
+  const sales = useLiveQuery(() => db.sales.toArray(), []);
   const currencyConfig = getCurrencyConfig(currency);
   const currencySymbol = currencyConfig?.symbol || currency;
 
@@ -128,14 +130,35 @@ export default function DebtForm({ onSubmit, initialData, onCancel, isLoading = 
     }
   }, [initialData, form]);
 
-  const handleFormSubmit = (values: DebtFormData | EditDebtFormData) => {
+  const handleFormSubmit = async (values: DebtFormData | EditDebtFormData) => {
       // Convert dueDate back to ISO string or null before submitting
       const dataToSubmit = {
           ...values,
           dueDate: values.dueDate ? values.dueDate.toISOString() : null,
           relatedSaleId: values.relatedSaleId === NONE_VALUE ? undefined : values.relatedSaleId, // Ensure undefined if "None" was selected
       };
-      onSubmit(dataToSubmit);
+
+      if (initialData) {
+        // Update existing debt
+        await db.debts.update(initialData.id, {
+          ...initialData,
+          ...dataToSubmit,
+          pending: true,
+          updatedAt: new Date().toISOString(),
+        });
+      } else {
+        // Add new debt
+        const newDebt: Debt = {
+          id: uuidv4(),
+          ...dataToSubmit,
+          status: 'pending',
+          amountPaid: 0,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+        await db.debts.add({ ...newDebt, pending: true });
+      }
+      onCancel();
   };
 
   return (
@@ -146,7 +169,7 @@ export default function DebtForm({ onSubmit, initialData, onCancel, isLoading = 
                 {initialData ? <Save className="h-5 w-5 text-accent" /> : <PlusCircle className="h-5 w-5 text-accent" />}
                 {initialData ? "Editar Dívida" : "Adicionar Nova Dívida"}
             </div>
-            <Button variant="ghost" size="sm" onClick={onCancel} disabled={isLoading}>
+            <Button variant="ghost" size="sm" onClick={onCancel}>
                  Cancelar
             </Button>
         </CardTitle>
@@ -161,7 +184,7 @@ export default function DebtForm({ onSubmit, initialData, onCancel, isLoading = 
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Tipo</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading}>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Selecione o tipo" />
@@ -184,7 +207,7 @@ export default function DebtForm({ onSubmit, initialData, onCancel, isLoading = 
                     <FormItem>
                       <FormLabel>Valor Total ({currencySymbol})</FormLabel>
                       <FormControl>
-                        <Input type="number" step="0.01" placeholder="Ex: 100.50" {...field} disabled={isLoading} />
+                        <Input type="number" step="0.01" placeholder="Ex: 100.50" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -199,7 +222,7 @@ export default function DebtForm({ onSubmit, initialData, onCancel, isLoading = 
                 <FormItem>
                   <FormLabel>Descrição</FormLabel>
                   <FormControl>
-                    <Textarea placeholder="Ex: Empréstimo para João, Pagamento fornecedor X..." {...field} disabled={isLoading} />
+                    <Textarea placeholder="Ex: Empréstimo para João, Pagamento fornecedor X..." {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -223,7 +246,6 @@ export default function DebtForm({ onSubmit, initialData, onCancel, isLoading = 
                                     // Ensure value is treated as number for validation
                                     onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                                     value={field.value ?? 0} // Handle potential undefined value
-                                    disabled={isLoading}
                                 />
                             </FormControl>
                              <FormDescription>
@@ -252,7 +274,6 @@ export default function DebtForm({ onSubmit, initialData, onCancel, isLoading = 
                                 "w-full pl-3 text-left font-normal",
                                 !field.value && "text-muted-foreground"
                             )}
-                            disabled={isLoading}
                             >
                             {field.value ? (
                                 format(field.value, "dd/MM/yyyy") // Format Date object
@@ -268,7 +289,7 @@ export default function DebtForm({ onSubmit, initialData, onCancel, isLoading = 
                             mode="single"
                             selected={field.value ?? undefined} // Pass Date object or undefined
                             onSelect={(date) => field.onChange(date)} // onChange provides Date | undefined
-                            disabled={(date) => date < new Date("1900-01-01") || isLoading}
+                            disabled={(date) => date < new Date("1900-01-01")}
                             initialFocus
                         />
                         </PopoverContent>
@@ -285,7 +306,7 @@ export default function DebtForm({ onSubmit, initialData, onCancel, isLoading = 
                     <FormItem>
                       <FormLabel>Nome do Contato (Opcional)</FormLabel>
                       <FormControl>
-                        <Input placeholder="Ex: Cliente A, Fornecedor B" {...field} value={field.value ?? ''} disabled={isLoading} />
+                        <Input placeholder="Ex: Cliente A, Fornecedor B" {...field} value={field.value ?? ''} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -303,7 +324,7 @@ export default function DebtForm({ onSubmit, initialData, onCancel, isLoading = 
                      <FormItem>
                        <FormLabel>Venda Relacionada (Opcional)</FormLabel>
                        {/* Ensure the value passed to Select is never null or empty string unless intended */}
-                       <Select onValueChange={field.onChange} value={field.value ?? NONE_VALUE} disabled={isLoading}>
+                       <Select onValueChange={field.onChange} value={field.value ?? NONE_VALUE}>
                          <FormControl>
                            <SelectTrigger>
                              {/* Display placeholder correctly based on value */}
@@ -313,7 +334,7 @@ export default function DebtForm({ onSubmit, initialData, onCancel, isLoading = 
                          <SelectContent>
                            {/* Use a distinct non-empty value for the "None" option */}
                            <SelectItem value={NONE_VALUE}>Nenhuma</SelectItem>
-                           {sales
+                           {sales && sales
                              .filter(s => !s.isLoss) // Only link non-loss sales
                              .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()) // Sort newest first
                              .map((sale) => (
@@ -331,8 +352,8 @@ export default function DebtForm({ onSubmit, initialData, onCancel, isLoading = 
             )}
 
 
-            <Button type="submit" disabled={isLoading} className="w-full bg-accent hover:bg-accent/90">
-              {isLoading ? "Salvando..." : (initialData ? "Salvar Alterações" : "Adicionar Dívida")}
+            <Button type="submit" className="w-full bg-accent hover:bg-accent/90">
+              {initialData ? "Salvar Alterações" : "Adicionar Dívida"}
             </Button>
           </form>
         </Form>

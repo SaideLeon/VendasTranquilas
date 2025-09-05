@@ -2,6 +2,8 @@
 "use client";
 
 import React, { useState, useMemo } from 'react';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { db } from '@/lib/db';
 import type { Product } from '@/types';
 import { calculateUnitCost } from '@/types'; // Import the helper
 import {
@@ -41,18 +43,18 @@ import {
 
 
 interface ProductListProps {
-  products: Product[];
   onEdit: (product: Product) => void;
-  onDelete: (productId: string) => void;
   onViewDetails: (product: Product) => void; // Added prop for viewing details
 }
 
-export default function ProductList({ products, onEdit, onDelete, onViewDetails }: ProductListProps) {
+export default function ProductList({ onEdit, onViewDetails }: ProductListProps) {
+  const products = useLiveQuery(() => db.products.where('deleted').notEqual(true).toArray(), []);
   const [searchTerm, setSearchTerm] = useState('');
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
   const { currency } = useStore(); // Get current currency
 
   const filteredProducts = useMemo(() => {
+    if (!products) return [];
     if (!searchTerm) return products;
     return products.filter((product) =>
       product.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -80,9 +82,9 @@ export default function ProductList({ products, onEdit, onDelete, onViewDetails 
       setProductToDelete(product);
   };
 
-   const confirmDelete = () => {
+   const confirmDelete = async () => {
      if (productToDelete) {
-       onDelete(productToDelete.id);
+       await db.products.update(productToDelete.id, { pending: true, deleted: true });
        setProductToDelete(null); // Close dialog
      }
    };
@@ -94,7 +96,7 @@ export default function ProductList({ products, onEdit, onDelete, onViewDetails 
              <CardTitle className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                  <Package className="h-5 w-5 text-primary-foreground"/>
-                 Lista de Produtos ({products.length})
+                 Lista de Produtos ({products?.length || 0})
                 </div>
                  <div className="relative ml-auto flex-1 md:grow-0">
                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />

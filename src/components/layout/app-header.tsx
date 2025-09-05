@@ -4,7 +4,7 @@
 import { useSession, signIn, signOut } from "next-auth/react";
 import Link from 'next/link';
 import { usePathname } from "next/navigation";
-import { Package, ShoppingCart, BarChart3, Wifi, WifiOff, Cloud, Upload, Download, Landmark, HandCoins, BrainCircuit } from "lucide-react"; // Added HandCoins for Debts, BrainCircuit for Insights
+import { Package, ShoppingCart, BarChart3, Wifi, WifiOff, Cloud, Upload, Download, Landmark, HandCoins, BrainCircuit, Loader } from "lucide-react"; // Added HandCoins for Debts, BrainCircuit for Insights
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useStore } from "@/store/store";
@@ -28,12 +28,14 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { handleExport, handleImport } from '@/lib/data-utils';
 import { useToast } from "@/hooks/use-toast";
+import { useSync } from '@/hooks/use-sync';
 import React, { useRef } from "react";
 import { SUPPORTED_CURRENCIES, getCurrencyConfig } from "@/config/currencies";
 import { Database } from 'lucide-react';
 
 
 export default function AppHeader() {
+  const { isSyncing } = useSync();
   const { data: session } = useSession();
   const pathname = usePathname();
   // Added setDebts to the destructuring
@@ -249,7 +251,7 @@ export default function AppHeader() {
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button variant="ghost" size="icon" onClick={syncData} disabled={!isOnline}>
-                  {isOnline ? <Wifi className="h-5 w-5 text-green-600" /> : <WifiOff className="h-5 w-5 text-red-600" />}
+                  {isSyncing ? <Loader className="h-5 w-5 animate-spin" /> : (isOnline ? <Wifi className="h-5 w-5 text-green-600" /> : <WifiOff className="h-5 w-5 text-red-600" />)}
                   <span className="sr-only">{isOnline ? "Online" : "Offline"}</span>
                 </Button>
               </TooltipTrigger>

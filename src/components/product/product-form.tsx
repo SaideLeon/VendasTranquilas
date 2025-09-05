@@ -20,6 +20,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PackagePlus, Save } from "lucide-react";
 import { useStore } from "@/store/store"; // Import useStore
 import { getCurrencyConfig } from "@/config/currencies"; // Import currency config
+import { db } from '@/lib/db';
+import { v4 as uuidv4 } from 'uuid';
 
 // Schema remains the same for the form input itself
 const formSchema = z.object({
@@ -37,13 +39,11 @@ const formSchema = z.object({
 type ProductFormData = z.infer<typeof formSchema>;
 
 interface ProductFormProps {
-  // onSubmit now expects the form data, store handles the rest
-  onSubmit: (data: ProductFormData) => void;
   initialData?: Product | null; // For editing
-  isLoading?: boolean;
+  onFinished: () => void;
 }
 
-export default function ProductForm({ onSubmit, initialData, isLoading = false }: ProductFormProps) {
+export default function ProductForm({ initialData, onFinished }: ProductFormProps) {
   const { currency } = useStore(); // Get current currency from store
   const currencyConfig = getCurrencyConfig(currency);
   const currencySymbol = currencyConfig?.symbol || currency; // Fallback to code if symbol not found
@@ -71,11 +71,27 @@ export default function ProductForm({ onSubmit, initialData, isLoading = false }
   }, [initialData, form]);
 
 
-  const handleFormSubmit = (values: ProductFormData) => {
-    // The onSubmit prop (connected to addProduct/updateProduct)
-    // will handle setting initialQuantity for new products.
-    // Just pass the form values.
-    onSubmit(values);
+  const handleFormSubmit = async (values: ProductFormData) => {
+    if (initialData) {
+      // Update existing product
+      await db.products.update(initialData.id, {
+        ...initialData,
+        ...values,
+        pending: true,
+        updatedAt: new Date().toISOString(),
+      });
+    } else {
+      // Add new product
+      const newProduct: Product = {
+        id: uuidv4(),
+        ...values,
+        initialQuantity: values.quantity,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      await db.products.add({ ...newProduct, pending: true });
+    }
+    onFinished();
   };
 
   return (
@@ -96,7 +112,7 @@ export default function ProductForm({ onSubmit, initialData, isLoading = false }
                 <FormItem>
                   <FormLabel>Nome do Produto</FormLabel>
                   <FormControl>
-                    <Input placeholder="Ex: Camiseta Básica" {...field} disabled={isLoading}/>
+                    <Input placeholder="Ex: Camiseta Básica" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -110,7 +126,7 @@ export default function ProductForm({ onSubmit, initialData, isLoading = false }
                   {/* Update label to include currency symbol */}
                   <FormLabel>Valor Total de Aquisição ({currencySymbol})</FormLabel>
                   <FormControl>
-                    <Input type="number" step="0.01" placeholder="Ex: 150.00" {...field} disabled={isLoading}/>
+                    <Input type="number" step="0.01" placeholder="Ex: 150.00" {...field} />
                   </FormControl>
                    <FormMessage />
                 </FormItem>
@@ -123,14 +139,14 @@ export default function ProductForm({ onSubmit, initialData, isLoading = false }
                 <FormItem>
                   <FormLabel>{initialData ? "Quantidade Atual em Estoque" : "Quantidade Inicial"}</FormLabel>
                   <FormControl>
-                    <Input type="number" step="1" min="1" placeholder="Ex: 50" {...field} disabled={isLoading}/>
+                    <Input type="number" step="1" min="1" placeholder="Ex: 50" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            <Button type="submit" disabled={isLoading} className="w-full bg-accent hover:bg-accent/90">
-               {isLoading ? "Salvando..." : (initialData ? "Salvar Alterações" : "Adicionar Produto")}
+            <Button type="submit" className="w-full bg-accent hover:bg-accent/90">
+               {initialData ? "Salvar Alterações" : "Adicionar Produto"}
             </Button>
           </form>
         </Form>

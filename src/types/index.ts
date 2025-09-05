@@ -7,6 +7,8 @@ export interface Product {
     // DEPRECATED: quantityInStock is replaced by quantity
     // quantityInStock: number;
   createdAt: string; // ISO string date
+  updatedAt: string; // ISO string date
+  deleted?: boolean;
 }
 
 export interface ExportData {
@@ -27,6 +29,8 @@ export interface Sale {
   lossReason?: string;
   profit: number; // Calculated: saleValue - (unitCost * quantitySold)
   createdAt: string; // ISO string date
+  updatedAt: string; // ISO string date
+  deleted?: boolean;
 }
 
 // Type for Debts (Receivables/Payables)
@@ -43,8 +47,10 @@ export interface Debt {
     status: DebtStatus; // 'pending', 'paid', 'partially_paid'
     contactName?: string; // Optional contact person/entity
     createdAt: string; // ISO string date
+    updatedAt: string; // ISO string date
     paidAt?: string | null; // Optional ISO string date when fully paid
     relatedSaleId?: string; // Optional: Link to the sale that generated this debt
+    deleted?: boolean;
 }
 
 

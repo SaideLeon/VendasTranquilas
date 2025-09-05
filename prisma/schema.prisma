@@ -66,6 +66,7 @@ model Product {
   quantity         Int
   initialQuantity  Int?      @map("initial_quantity") // Optional initial quantity
   createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt
   sales            Sale[] // Relation to Sales
   userId           String
   user             User      @relation(fields: [userId], references: [id])
@@ -81,6 +82,7 @@ model Sale {
   lossReason   String?   @map("loss_reason")
   profit       Float
   createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt
   product      Product   @relation(fields: [productId], references: [id], onDelete: Cascade) // Define relation with onDelete cascade
   debts        Debt[]    // Relation to Debts generated from this sale
   userId       String
@@ -97,6 +99,7 @@ model Debt {
   status        DebtStatus @default(PENDING) // Enum defined below
   contactName   String?   @map("contact_name")
   createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt
   paidAt        DateTime? @map("paid_at")
   relatedSaleId String?   @map("related_sale_id")
   sale          Sale?     @relation(fields: [relatedSaleId], references: [id], onDelete: SetNull) // Optional relation, set null on sale delete

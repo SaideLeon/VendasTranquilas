@@ -2,6 +2,8 @@
 "use client";
 
 import React, { useState } from 'react';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { db } from '@/lib/db';
 import type { Sale } from '@/types';
 import {
   Table,
@@ -38,12 +40,11 @@ import { useStore } from '@/store/store';
 import { formatCurrency } from '@/lib/currency-utils';
 
 interface SalesListProps {
-  sales: Sale[];
-  onDelete: (saleId: string) => void;
   onViewDetails: (sale: Sale) => void; // Added prop for viewing details
 }
 
-export default function SalesList({ sales, onDelete, onViewDetails }: SalesListProps) {
+export default function SalesList({ onViewDetails }: SalesListProps) {
+  const sales = useLiveQuery(() => db.sales.where('deleted').notEqual(true).toArray(), []);
   const [saleToDelete, setSaleToDelete] = useState<Sale | null>(null);
   const { currency } = useStore();
 
@@ -59,23 +60,23 @@ export default function SalesList({ sales, onDelete, onViewDetails }: SalesListP
 
   const handleDeleteClick = (sale: Sale) => setSaleToDelete(sale);
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (saleToDelete) {
-      onDelete(saleToDelete.id);
+      await db.sales.update(saleToDelete.id, { pending: true, deleted: true });
       setSaleToDelete(null);
     }
   };
 
-  const sortedSales = [...sales].sort((a, b) =>
+  const sortedSales = sales ? [...sales].sort((a, b) =>
     new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-  );
+  ) : [];
 
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <ShoppingCart className="h-5 w-5 text-primary-foreground"/>
-          Histórico de Vendas / Perdas ({sales.length})
+          Histórico de Vendas / Perdas ({sortedSales.length})
         </CardTitle>
       </CardHeader>
 
@@ -128,7 +129,7 @@ export default function SalesList({ sales, onDelete, onViewDetails }: SalesListP
                          </Button>
                          {/* Delete Button */}
                          <AlertDialog>
-                           <AlertDialogTitle asChild>
+                           <AlertDialogTrigger asChild>
                              <Button
                                variant="destructive" // Changed from ghost for consistency
                                size="icon"
@@ -137,7 +138,7 @@ export default function SalesList({ sales, onDelete, onViewDetails }: SalesListP
                              >
                                <Trash2 className="h-4 w-4" />
                              </Button>
-                           </AlertDialogTitle>
+                           </AlertDialogTrigger>
                            <AlertDialogContent>
                              <AlertDialogHeader>
                                <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
