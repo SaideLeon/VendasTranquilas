@@ -49,6 +49,7 @@ import {
 } from "@/components/ui/tooltip";
 import { Progress } from "@/components/ui/progress"; // Import Progress component
 import { useToast } from '@/hooks/use-toast';
+import { useSession } from 'next-auth/react';
 
 interface DebtListProps {
   title: string;
@@ -70,7 +71,11 @@ const getStatusProps = (status: DebtStatus): { text: string; color: string; icon
 };
 
 export default function DebtList({ title, onEdit, onViewDetails }: DebtListProps) {
-  const debts = useLiveQuery(() => db.debts.where('deleted').notEqual(true).toArray(), []);
+  const { data: session } = useSession();
+  const debts = useLiveQuery(() => {
+    if (!session?.user?.id) return [];
+    return db.debts.where({ userId: session.user.id, deleted: false }).toArray();
+  }, [session]);
   const [searchTerm, setSearchTerm] = useState('');
   const [debtToDelete, setDebtToDelete] = useState<Debt | null>(null);
   const [quickPayAmount, setQuickPayAmount] = useState<number | string>(''); // For quick pay input

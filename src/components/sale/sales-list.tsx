@@ -38,13 +38,18 @@ import {
 } from "@/components/ui/tooltip";
 import { useStore } from '@/store/store';
 import { formatCurrency } from '@/lib/currency-utils';
+import { useSession } from 'next-auth/react';
 
 interface SalesListProps {
   onViewDetails: (sale: Sale) => void; // Added prop for viewing details
 }
 
 export default function SalesList({ onViewDetails }: SalesListProps) {
-  const sales = useLiveQuery(() => db.sales.where('deleted').notEqual(true).toArray(), []);
+  const { data: session } = useSession();
+  const sales = useLiveQuery(() => {
+    if (!session?.user?.id) return [];
+    return db.sales.where({ userId: session.user.id, deleted: false }).toArray();
+  }, [session]);
   const [saleToDelete, setSaleToDelete] = useState<Sale | null>(null);
   const { currency } = useStore();
 
