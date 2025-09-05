@@ -12,45 +12,20 @@ import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
 
 export default function ProdutosPage() {
-  const { products, addProduct, updateProduct, deleteProduct } = useStore();
+  const { products, deleteProduct } = useStore();
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [viewingProduct, setViewingProduct] = useState<Product | null>(null); // State for product details
   const [isFormVisible, setIsFormVisible] = useState(false);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false); // State for modal visibility
   const { toast } = useToast();
 
-  const handleFormSubmit = (data: Omit<Product, 'id' | 'createdAt'> & { initialQuantity?: number }) => {
-    try {
-      if (editingProduct) {
-        // When editing, pass the existing product merged with form data
-        updateProduct({ ...editingProduct, ...data });
-        toast({
-          title: "Produto Atualizado",
-          description: `"${data.name}" foi atualizado com sucesso.`,
-        });
-        setEditingProduct(null);
-        setIsFormVisible(false);
-      } else {
-         // Ensure initialQuantity is set if not provided (should be set by form handler now)
-         const productDataWithInitialQty = {
-             ...data,
-             initialQuantity: data.initialQuantity ?? data.quantity
-         };
-        addProduct(productDataWithInitialQty); // Type assertion no longer needed
-        toast({
-          title: "Produto Adicionado",
-          description: `"${data.name}" foi adicionado com sucesso.`,
-        });
-        setIsFormVisible(false);
-      }
-    } catch (error) {
-      console.error("Error saving product:", error);
-      toast({
-        title: "Erro ao Salvar",
-        description: "Não foi possível salvar o produto.",
-        variant: "destructive",
-      });
-    }
+  const handleFormFinished = () => {
+    toast({
+      title: editingProduct ? "Produto Atualizado" : "Produto Adicionado",
+      description: `O produto foi salvo com sucesso.`,
+    });
+    setEditingProduct(null);
+    setIsFormVisible(false);
   };
 
   const handleEdit = (product: Product) => {
@@ -111,7 +86,7 @@ export default function ProdutosPage() {
        <div className={`${isFormVisible ? 'block' : 'hidden'} md:block`}>
            <ProductForm
              key={editingProduct ? editingProduct.id : 'new'}
-             onSubmit={handleFormSubmit}
+             onFinished={handleFormFinished}
              initialData={editingProduct}
            />
        </div>

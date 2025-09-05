@@ -20,6 +20,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PackagePlus, Save } from "lucide-react";
 import { useStore } from "@/store/store"; // Import useStore
 import { getCurrencyConfig } from "@/config/currencies"; // Import currency config
+import { db } from '@/lib/db';
+import { v4 as uuidv4 } from 'uuid';
+import { useSession } from 'next-auth/react';
 
 // Schema remains the same for the form input itself
 const formSchema = z.object({
@@ -38,10 +41,11 @@ type ProductFormData = z.infer<typeof formSchema>;
 
 interface ProductFormProps {
   initialData?: Product | null; // For editing
-  onSubmit: (data: ProductFormData) => void;
+  onFinished: () => void;
 }
 
-export default function ProductForm({ initialData, onSubmit }: ProductFormProps) {
+export default function ProductForm({ initialData, onFinished }: ProductFormProps) {
+  const { data: session } = useSession();
   const { currency } = useStore(); // Get current currency from store
   const currencyConfig = getCurrencyConfig(currency);
   const currencySymbol = currencyConfig?.symbol || currency; // Fallback to code if symbol not found
@@ -70,8 +74,29 @@ export default function ProductForm({ initialData, onSubmit }: ProductFormProps)
 
 
   const handleFormSubmit = async (values: ProductFormData) => {
-    onSubmit(values);
-    form.reset();
+    if (!session?.user?.id) return;
+
+    if (initialData) {
+      // Update existing product
+      await db.products.update(initialData.id, {
+        ...initialData,
+        ...values,
+        pending: true,
+        updatedAt: new Date().toISOString(),
+      });
+    } else {
+      // Add new product
+      const newProduct: Product = {
+        id: uuidv4(),
+        userId: session.user.id,
+        ...values,
+        initialQuantity: values.quantity,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      await db.products.add({ ...newProduct, pending: true });
+    }
+    onFinished();
   };
 
   return (
