@@ -1,6 +1,7 @@
 // src/components/layout/app-header.tsx
 "use client";
 
+import { useSession, signIn, signOut } from "next-auth/react";
 import Link from 'next/link';
 import { usePathname } from "next/navigation";
 import { Package, ShoppingCart, BarChart3, Wifi, WifiOff, Cloud, Upload, Download, Landmark, HandCoins, BrainCircuit } from "lucide-react"; // Added HandCoins for Debts, BrainCircuit for Insights
@@ -33,6 +34,7 @@ import { Database } from 'lucide-react';
 
 
 export default function AppHeader() {
+  const { data: session } = useSession();
   const pathname = usePathname();
   // Added setDebts to the destructuring
   const { isOnline, syncData, lastSync, setProducts, setSales, setDebts, setLastSync, currency, setCurrency, isDatabaseConnected } = useStore();
@@ -269,6 +271,23 @@ export default function AppHeader() {
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
+
+          {session ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline">
+                  {session.user?.name}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => signOut()}>
+                  Sair
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Button onClick={() => signIn()}>Entrar</Button>
+          )}
         </div>
       </div>
        {/* Mobile Navigation */}

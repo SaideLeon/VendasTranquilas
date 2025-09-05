@@ -4,6 +4,7 @@ import "./globals.css";
 import { cn } from "@/lib/utils";
 import { Toaster } from "@/components/ui/toaster";
 import AppHeader from "@/components/layout/app-header";
+import AppSessionProvider from "@/components/layout/session-provider";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -29,13 +30,15 @@ export default function RootLayout({
           inter.variable
         )}
       >
-        <div className="flex min-h-screen flex-col">
-          <AppHeader />
-          <main className="flex-1 container mx-auto p-4 md:p-8">
-             {children}
-          </main>
-          <Toaster />
-        </div>
+        <AppSessionProvider>
+          <div className="flex min-h-screen flex-col">
+            <AppHeader />
+            <main className="flex-1 container mx-auto p-4 md:p-8">
+              {children}
+            </main>
+            <Toaster />
+          </div>
+        </AppSessionProvider>
       </body>
     </html>
   );
