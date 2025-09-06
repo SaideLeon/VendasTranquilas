@@ -48,7 +48,7 @@ export default function SalesList({ onViewDetails }: SalesListProps) {
   const { data: session } = useSession();
   const sales = useLiveQuery(() => {
     if (!session?.user?.id) return [];
-    return db.sales.where({ userId: session.user.id, deleted: false }).toArray();
+    return db.sales.where('userId').equals(session.user.id).and(s => !s.deleted).toArray();
   }, [session]);
   const [saleToDelete, setSaleToDelete] = useState<Sale | null>(null);
   const { currency } = useStore();

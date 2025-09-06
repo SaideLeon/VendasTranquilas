@@ -74,7 +74,7 @@ export default function DebtList({ title, onEdit, onViewDetails }: DebtListProps
   const { data: session } = useSession();
   const debts = useLiveQuery(() => {
     if (!session?.user?.id) return [];
-    return db.debts.where({ userId: session.user.id, deleted: false }).toArray();
+    return db.debts.where('userId').equals(session.user.id).and(d => !d.deleted).toArray();
   }, [session]);
   const [searchTerm, setSearchTerm] = useState('');
   const [debtToDelete, setDebtToDelete] = useState<Debt | null>(null);
