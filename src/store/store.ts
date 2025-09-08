@@ -41,19 +41,19 @@ interface AppState {
   setError: (error: string | null) => void;
 
   // Product actions
-  addProduct: (productData: Omit<Product, 'id' | 'createdAt'>) => Promise<Product | null>;
+  addProduct: (productData: Omit<Product, 'id' | 'createdAt' | 'userId' | 'user'>) => Promise<Product | null>;
   updateProduct: (product: Product) => Promise<Product | null>;
   deleteProduct: (productId: string) => Promise<void>;
   getProductById: (productId: string) => Product | undefined; // Make sync
 
   // Sale actions
-  addSale: (saleData: Omit<Sale, 'id' | 'profit' | 'productName' | 'createdAt'>) => Promise<Sale | null>;
+  addSale: (saleData: Omit<Sale, 'id' | 'profit' | 'productName' | 'createdAt' | 'userId' | 'user'>) => Promise<Sale | null>;
   deleteSale: (saleId: string) => Promise<void>;
   getSaleById: (saleId: string) => Sale | undefined; // Make sync
 
   // Debt actions
-  addDebt: (debtData: Omit<Debt, 'id' | 'createdAt' | 'status' | 'amountPaid'>) => Promise<Debt | null>;
-  updateDebt: (debtId: string, updates: Partial<Omit<Debt, 'id' | 'createdAt'>>) => Promise<Debt | null>;
+  addDebt: (debtData: Omit<Debt, 'id' | 'createdAt' | 'status' | 'amountPaid' | 'userId' | 'user'>) => Promise<Debt | null>;
+  updateDebt: (debtId: string, updates: Partial<Omit<Debt, 'id' | 'createdAt' | 'userId' | 'user'>) => Promise<Debt | null>;
   deleteDebt: (debtId: string) => Promise<void>;
   getDebtById: (debtId: string) => Debt | undefined; // Make sync
 
