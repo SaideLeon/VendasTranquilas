@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const noHeaderPaths = ['/login', '/landing'];
+  const noHeaderPaths = ['/login', '/'];
   const isPublicPage = noHeaderPaths.includes(pathname);
 
   return (
