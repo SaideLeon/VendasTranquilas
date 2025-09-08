@@ -43,14 +43,21 @@ export async function getProducts(): Promise<Product[]> {
 }
 
 export async function addProduct(productData: Omit<Product, 'id' | 'createdAt' | 'userId' | 'user'>): Promise<Product | null> {
+  console.log("addProduct called with:", productData);
   const user = await getUser();
+  console.log("User found:", user.id);
+
   const newProductData = {
     ...productData,
     userId: user.id,
     initialQuantity: productData.initialQuantity ?? productData.quantity,
   };
+
+  console.log("Data to be inserted:", newProductData);
+
   try {
     const inserted = await prisma.product.create({ data: newProductData });
+    console.log("Product inserted successfully:", inserted);
     return { ...inserted, createdAt: inserted.createdAt.toISOString() } as Product;
   } catch (error) {
     console.error("Error adding product:", error);
