@@ -9,6 +9,7 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 // --- Helper to get authenticated user ---
 async function getUser() {
   const session = await getServerSession(authOptions);
+  console.log("Session in getUser:", session);
   if (!session || !session.user || !session.user.id) {
     throw new Error("Not authenticated");
   }
