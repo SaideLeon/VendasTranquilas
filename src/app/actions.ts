@@ -198,7 +198,7 @@ export async function addDebt(debtData: Omit<Debt, 'id' | 'createdAt' | 'status'
   }
 }
 
-export async function updateDebt(debtId: string, updates: Partial<Omit<Debt, 'id' | 'createdAt' | 'userId' | 'user'>): Promise<Debt | null> {
+export async function updateDebt(debtId: string, updates: Partial<Omit<Debt, 'id' | 'createdAt' | 'userId' | 'user'>>): Promise<Debt | null> {
   const user = await getUser();
   const prismaUpdates: Record<string, any> = { ...updates };
 
