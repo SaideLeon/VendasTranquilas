@@ -12,7 +12,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (status === 'authenticated') {
-      router.push('/vendas') // Or any other protected page
+      router.push('/produtos') // Or any other protected page
     }
   }, [status, router])
 
