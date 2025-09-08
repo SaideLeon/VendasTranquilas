@@ -195,11 +195,7 @@ export const useStore = create<AppState>()(
                     if (!get().isDatabaseConnected) {
                         throw new Error("Database not connected. Cannot initialize.");
                     }
-                    const [products, sales, debts] = await Promise.all([
-                        dbGetProducts(),
-                        dbGetSales(),
-                        dbGetDebts(),
-                    ]);
+                    const { products, sales, debts } = await getInitialData();
                     set({
                         products: products || [],
                         sales: sales || [],
@@ -211,7 +207,6 @@ export const useStore = create<AppState>()(
                 } catch (error: any) {
                     console.error("Failed to initialize data:", error);
                     set({ isLoading: false, error: `Failed to fetch initial data: ${error.message}` });
-                    // Optionally, attempt to load from localStorage as fallback?
                 }
             },
 
@@ -565,6 +560,15 @@ if (typeof window !== 'undefined') {
 
     window.addEventListener('online', updateOnlineStatus);
     window.addEventListener('offline', updateOnlineStatus);
+
+     // Initial check
+     // updateOnlineStatus(); // Initial check might happen too early, rely on rehydration logic
+}
+
+// Export UUID generator if needed elsewhere
+export { uuidv4 };
+
+dEventListener('offline', updateOnlineStatus);
 
      // Initial check
      // updateOnlineStatus(); // Initial check might happen too early, rely on rehydration logic

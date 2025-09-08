@@ -9,7 +9,6 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 // --- Helper to get authenticated user ---
 async function getUser() {
   const session = await getServerSession(authOptions);
-  console.log("Session in getUser:", session);
   if (!session || !session.user || !session.user.id) {
     throw new Error("Not authenticated");
   }
@@ -43,21 +42,14 @@ export async function getProducts(): Promise<Product[]> {
 }
 
 export async function addProduct(productData: Omit<Product, 'id' | 'createdAt' | 'userId' | 'user'>): Promise<Product | null> {
-  console.log("addProduct called with:", productData);
   const user = await getUser();
-  console.log("User found:", user.id);
-
   const newProductData = {
     ...productData,
     userId: user.id,
     initialQuantity: productData.initialQuantity ?? productData.quantity,
   };
-
-  console.log("Data to be inserted:", newProductData);
-
   try {
     const inserted = await prisma.product.create({ data: newProductData });
-    console.log("Product inserted successfully:", inserted);
     return { ...inserted, createdAt: inserted.createdAt.toISOString() } as Product;
   } catch (error) {
     console.error("Error adding product:", error);
@@ -225,4 +217,14 @@ export async function deleteDebt(debtId: string): Promise<void> {
     console.error("Error deleting debt:", error);
     throw new Error("Failed to delete debt.");
   }
+}
+
+export async function getInitialData() {
+    const user = await getUser();
+    const [products, sales, debts] = await Promise.all([
+        getProducts(),
+        getSales(),
+        getDebts(),
+    ]);
+    return { products, sales, debts };
 }
