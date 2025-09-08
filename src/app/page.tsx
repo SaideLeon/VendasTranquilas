@@ -7,8 +7,8 @@ import Head from 'next/head';
 export default function HomePage() {
   useEffect(() => {
     // Smooth scrolling for anchor links
-    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-        anchor.addEventListener('click', function (this: HTMLAnchorElement, e: MouseEvent) {
+    document.querySelectorAll<HTMLAnchorElement>('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
             e.preventDefault();
             const href = this.getAttribute('href');
             if (href) {
