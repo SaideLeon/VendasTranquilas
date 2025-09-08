@@ -7,7 +7,7 @@ export default function Home() {
   const router = useRouter();
 
   useEffect(() => {
-    router.replace('/produtos');
+    router.replace('/landing');
   }, [router]);
 
   return null; // Return null or a loading indicator while redirecting
