@@ -53,7 +53,7 @@ interface AppState {
 
   // Debt actions
   addDebt: (debtData: Omit<Debt, 'id' | 'createdAt' | 'status' | 'amountPaid' | 'userId' | 'user'>) => Promise<Debt | null>;
-  updateDebt: (debtId: string, updates: Partial<Omit<Debt, 'id' | 'createdAt' | 'userId' | 'user'>) => Promise<Debt | null>;
+  updateDebt: (debtId: string, updates: Partial<Omit<Debt, 'id' | 'createdAt' | 'userId' | 'user'>>) => Promise<Debt | null>;
   deleteDebt: (debtId: string) => Promise<void>;
   getDebtById: (debtId: string) => Debt | undefined; // Make sync
 
