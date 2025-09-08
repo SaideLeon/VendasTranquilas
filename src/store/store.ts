@@ -9,6 +9,7 @@ import { calculateUnitCost } from '@/types'; // Assuming this helper stays in ty
 import { v4 as uuidv4 } from 'uuid';
 import { DEFAULT_CURRENCY_CODE } from '@/config/currencies';
 import {
+  getInitialData,
   getProducts as dbGetProducts,
   addProduct as dbAddProduct,
   updateProduct as dbUpdateProduct,
@@ -217,19 +218,15 @@ export const useStore = create<AppState>()(
                  }
                 set({ isLoading: true, error: null });
                 try {
-                    // Pass data to server action, which handles ID generation etc.
                     const savedProduct = await dbAddProduct(productData);
 
                     if (!savedProduct) throw new Error("Failed to save product to database.");
 
-                    // Replace temp data with saved data from DB (especially if ID changed)
-                    // Or just refetch all products for simplicity? Let's refetch for now.
-                     await get().initializeData(); // Refetch to ensure consistency
+                     await get().initializeData();
                      set({ isLoading: false });
-                    return savedProduct; // Return the product saved in DB
+                    return savedProduct;
                 } catch (error: any) {
                     console.error("Failed to add product:", error);
-                    // Revert optimistic update if it failed (if implemented)
                      set({ isLoading: false, error: `Failed to add product: ${error.message}` });
                     return null;
                 }
@@ -241,24 +238,15 @@ export const useStore = create<AppState>()(
                      return null;
                  }
                 set({ isLoading: true, error: null });
-                const originalProducts = get().products; // Backup for potential revert
                 try {
-                    // Optimistic UI update (optional)
-                    // set((state) => ({
-                    //   products: state.products.map((p) => (p.id === product.id ? product : p)),
-                    // }));
-
                     const updatedProduct = await dbUpdateProduct(product);
                     if (!updatedProduct) throw new Error("Failed to update product in database.");
 
-                    // Refetch for consistency
                     await get().initializeData();
                      set({ isLoading: false });
                     return updatedProduct;
                 } catch (error: any) {
                     console.error("Failed to update product:", error);
-                    // Revert optimistic update (if implemented)
-                    // set({ products: originalProducts });
                      set({ isLoading: false, error: `Failed to update product: ${error.message}` });
                     return null;
                 }
@@ -270,31 +258,17 @@ export const useStore = create<AppState>()(
                      return;
                  }
                 set({ isLoading: true, error: null });
-                const originalProducts = get().products;
-                const originalSales = get().sales;
-                 const originalDebts = get().debts; // Also handle debts
                 try {
-                    // Optimistic UI update (optional)
-                    // set((state) => ({
-                    //     products: state.products.filter((p) => p.id !== productId),
-                    //     sales: state.sales.filter((s) => s.productId !== productId), // Also remove related sales
-                    //     debts: state.debts.filter(d => !d.relatedSaleId || !state.sales.find(s => s.id === d.relatedSaleId && s.productId === productId)), // Complex logic for related debts might be needed
-                    // }));
+                    await dbDeleteProduct(productId);
 
-                    await dbDeleteProduct(productId); // Assume this also handles related sales/debts in DB via cascade or triggers
-
-                    // Refetch for consistency
                     await get().initializeData();
                     set({ isLoading: false });
                 } catch (error: any) {
                     console.error("Failed to delete product:", error);
-                    // Revert optimistic update (if implemented)
-                    // set({ products: originalProducts, sales: originalSales, debts: originalDebts });
                      set({ isLoading: false, error: `Failed to delete product: ${error.message}` });
                 }
             },
 
-             // Use local state for immediate access, DB is source of truth
              getProductById: (productId) => get().products.find(p => p.id === productId),
              getSaleById: (saleId) => get().sales.find(s => s.id === saleId),
              getDebtById: (debtId) => get().debts.find(d => d.id === debtId),
@@ -317,12 +291,10 @@ export const useStore = create<AppState>()(
 
                 set({ isLoading: true, error: null });
                 try {
-                    // Pass raw sale data to server action
-                    const savedSale = await dbAddSale(saleData); // Server action calculates profit, gets product name, updates stock
+                    const savedSale = await dbAddSale(saleData);
 
                     if (!savedSale) throw new Error("Failed to save sale to database.");
 
-                    // Refetch for consistency
                     await get().initializeData();
                      set({ isLoading: false });
                     return savedSale;
@@ -345,10 +317,8 @@ export const useStore = create<AppState>()(
                      return;
                  }
                 try {
-                    // DB action should handle restoring product quantity
                     await dbDeleteSale(saleId);
 
-                    // Refetch for consistency
                     await get().initializeData();
                     set({ isLoading: false });
                 } catch (error: any) {
@@ -357,7 +327,6 @@ export const useStore = create<AppState>()(
                 }
             },
 
-            // Debt Management with DB
             addDebt: async (debtData) => {
                  if (!get().isDatabaseConnected) {
                      set({ error: "Database not connected. Cannot add debt." });
@@ -365,11 +334,10 @@ export const useStore = create<AppState>()(
                  }
                 set({ isLoading: true, error: null });
                 try {
-                     // Pass raw data to server action
                     const savedDebt = await dbAddDebt(debtData);
                     if (!savedDebt) throw new Error("Failed to save debt to database.");
 
-                    await get().initializeData(); // Refetch
+                    await get().initializeData();
                     set({ isLoading: false });
                     return savedDebt;
                 } catch (error: any) {
@@ -392,21 +360,19 @@ export const useStore = create<AppState>()(
 
                 set({ isLoading: true, error: null });
                 try {
-                     // Prepare update data, recalculating status if amountPaid changes
                      const finalUpdates = { ...updates };
                      if (updates.amountPaid !== undefined) {
                          const totalAmount = existingDebt.amount;
                          const newAmountPaid = updates.amountPaid;
                          if (newAmountPaid >= totalAmount) {
                              finalUpdates.status = 'PAID';
-                             // Use existing paidAt if provided, otherwise set new one
                              finalUpdates.paidAt = updates.paidAt ?? new Date().toISOString();
                          } else if (newAmountPaid > 0) {
                              finalUpdates.status = 'PARTIALLY_PAID';
-                             finalUpdates.paidAt = null; // Clear paidAt if only partially paid
+                             finalUpdates.paidAt = null;
                          } else {
                              finalUpdates.status = 'PENDING';
-                             finalUpdates.paidAt = null; // Clear paidAt if back to pending
+                             finalUpdates.paidAt = null;
                          }
                      }
 
@@ -414,7 +380,7 @@ export const useStore = create<AppState>()(
                     const updatedDebt = await dbUpdateDebt(debtId, finalUpdates);
                     if (!updatedDebt) throw new Error("Failed to update debt in database.");
 
-                    await get().initializeData(); // Refetch
+                    await get().initializeData();
                     set({ isLoading: false });
                     return updatedDebt;
                 } catch (error: any) {
@@ -432,7 +398,7 @@ export const useStore = create<AppState>()(
                 set({ isLoading: true, error: null });
                 try {
                     await dbDeleteDebt(debtId);
-                    await get().initializeData(); // Refetch
+                    await get().initializeData();
                     set({ isLoading: false });
                 } catch (error: any) {
                     console.error("Failed to delete debt:", error);
@@ -445,20 +411,17 @@ export const useStore = create<AppState>()(
                 return calculateReports(products, sales, debts);
             },
 
-            // Setters for data loading (backup/import) - less critical with DB?
             setProducts: (products) => set({ products }),
             setSales: (sales) => set({ sales }),
             setDebts: (debts) => set({ debts }),
             setLastSync: (date) => set({ lastSync: date }),
 
-            // SyncData: Placeholder or could trigger background jobs
             syncData: async () => {
                 if (!get().isOnline || !get().isDatabaseConnected) {
                     console.log("Sync skipped: Offline or DB not connected.");
                     return;
                 }
                 console.log("Simulating background data sync/check...");
-                // In a real app, this might check for pending operations or refresh data
                 set({ lastSync: new Date() });
             },
 
@@ -469,7 +432,7 @@ export const useStore = create<AppState>()(
                          headers: {
                              'Content-Type': 'application/json',
                          },
-                         body: JSON.stringify({}), // Send an empty body or relevant data if needed
+                         body: JSON.stringify({}),
                      });
 
                      const data: CheckDbConnectionResponse = await response.json();
@@ -479,7 +442,6 @@ export const useStore = create<AppState>()(
                       if (!isConnected) {
                           set({ error: "Database connection failed." });
                       } else {
-                           // If connection is successful, clear previous connection error
                            if (get().error === "Database connection failed.") {
                                set({ error: null });
                            }
@@ -492,16 +454,11 @@ export const useStore = create<AppState>()(
 
         }),
         {
-            name: 'vendas-tranquilas-storage', // name of the item in the storage (must be unique)
-            storage: createJSONStorage(() => localStorage), // Keep localStorage as a fallback/cache
-            // Persist only essential settings or minimal cache if DB is primary
+            name: 'vendas-tranquilas-storage',
+            storage: createJSONStorage(() => localStorage),
             partialize: (state) => ({
-                // products: state.products, // Maybe cache?
-                // sales: state.sales,       // Maybe cache?
-                // debts: state.debts,       // Maybe cache?
                 lastSync: state.lastSync,
                 currency: state.currency,
-                // Don't persist isOnline, isDatabaseConnected, isLoading, error
             }),
              onRehydrateStorage: (state) => {
                 console.log("Attempting to rehydrate state...");
@@ -510,14 +467,10 @@ export const useStore = create<AppState>()(
                          console.error("Failed to rehydrate state from storage:", error);
                      } else if (rehydratedState) {
                         console.log("Rehydration successful (from localStorage).");
-                         // Ensure default currency if missing
                          if (!rehydratedState.currency) {
                              rehydratedState.currency = DEFAULT_CURRENCY_CODE;
                          }
-                         // Set initial online status based on browser
                          rehydratedState.isOnline = typeof navigator !== 'undefined' ? navigator.onLine : true;
-                         // Trigger initial data load and connection check after rehydration
-                         // Use setTimeout to avoid issues during initialization phase
                          setTimeout(() => {
                             console.log("Checking DB connection and initializing data post-rehydration...");
                             useStore.getState().checkDatabaseConnection().then(() => {
@@ -525,14 +478,11 @@ export const useStore = create<AppState>()(
                                     useStore.getState().initializeData();
                                 } else {
                                     console.warn("Database not connected after rehydration, skipping initial data load from DB.");
-                                     // Maybe load cached data from localStorage here if desired
-                                     // set({ products: rehydratedState.products || [], sales: rehydratedState.sales || [], debts: rehydratedState.debts || [] });
                                 }
                             });
                          }, 0);
                      } else {
                          console.log("No state found in storage for rehydration.");
-                         // If no state, set defaults and trigger initial load
                           setTimeout(() => {
                               console.log("No stored state, checking DB connection and initializing data...");
                               useStore.getState().checkDatabaseConnection().then(() => {
@@ -547,12 +497,11 @@ export const useStore = create<AppState>()(
                      }
                  }
              },
-        } // End of persist options
-    ) // End of persist call
-); // End of create call
+        }
+    )
+);
 
 
-// Add event listeners for online/offline status
 if (typeof window !== 'undefined') {
     const updateOnlineStatus = () => {
         useStore.getState().setIsOnline(navigator.onLine);
@@ -560,20 +509,6 @@ if (typeof window !== 'undefined') {
 
     window.addEventListener('online', updateOnlineStatus);
     window.addEventListener('offline', updateOnlineStatus);
-
-     // Initial check
-     // updateOnlineStatus(); // Initial check might happen too early, rely on rehydration logic
 }
 
-// Export UUID generator if needed elsewhere
 export { uuidv4 };
-
-dEventListener('offline', updateOnlineStatus);
-
-     // Initial check
-     // updateOnlineStatus(); // Initial check might happen too early, rely on rehydration logic
-}
-
-// Export UUID generator if needed elsewhere
-export { uuidv4 };
-
