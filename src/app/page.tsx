@@ -742,8 +742,8 @@ export default function HomePage() {
                     © 2024 SIGEF. Todos os direitos reservados.
                 </p>
                 <div className="flex space-x-6 mt-4 md:mt-0">
-                    <a href="#" className="text-gray-400 hover:text-white text-sm transition duration-300">Política de Privacidade</a>
-                    <a href="#" className="text-gray-400 hover:text-white text-sm transition duration-300">Termos de Uso</a>
+                    <Link href="/politica-de-privacidade" className="text-gray-400 hover:text-white text-sm transition duration-300">Política de Privacidade</Link>
+                    <Link href="/termos-e-condicoes" className="text-gray-400 hover:text-white text-sm transition duration-300">Termos de Uso</Link>
                     <a href="#" className="text-gray-400 hover:text-white text-sm transition duration-300">Cookies</a>
                 </div>
             </div>
