@@ -483,7 +483,7 @@ export default function HomePage() {
                 <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-8 relative">
                     <div className="text-center mb-8">
                         <h3 className="text-2xl font-bold text-gray-900 mb-2">Empresarial</h3>
-                        <div className="text-4xl font-bold text-gray-900 mb-1">R$ 99</div>
+                        <div className="text-4xl font-bold text-gray-900 mb-1">1500 MT</div>
                         <div className="text-gray-600">/mês</div>
                     </div>
                     <ul className="space-y-4 mb-8">
@@ -497,19 +497,19 @@ export default function HomePage() {
                             <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/>
                             </svg>
+                            <span>Equipe de agentes autônomos no WhatsApp</span>
+                        </li>
+                        <li className="flex items-center space-x-3">
+                            <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/>
+                            </svg>
                             <span>Múltiplos usuários</span>
                         </li>
                         <li className="flex items-center space-x-3">
                             <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/>
                             </svg>
-                            <span>API personalizada</span>
-                        </li>
-                        <li className="flex items-center space-x-3">
-                            <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/>
-                            </svg>
-                            <span>Integração personalizada</span>
+                            <span>API e Integrações</span>
                         </li>
                         <li className="flex items-center space-x-3">
                             <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
