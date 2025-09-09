@@ -239,19 +239,36 @@ export async function getAllUsersWithSubscription() {
 
   try {
     const users = await prisma.user.findMany({
-      include: {
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        createdAt: true,
         subscription: {
-          include: {
+          select: {
+            id: true,
             plan: true,
-          },
-        },
+            startDate: true,
+            endDate: true,
+            isActive: true,
+          }
+        }
       },
       orderBy: {
         createdAt: 'desc',
       },
     });
-    // Convert dates to string to make them serializable for client components
-    return JSON.parse(JSON.stringify(users));
+    
+    return users.map(user => ({
+        ...user,
+        createdAt: user.createdAt.toISOString(),
+        subscription: user.subscription ? {
+            ...user.subscription,
+            startDate: user.subscription.startDate.toISOString(),
+            endDate: user.subscription.endDate.toISOString(),
+        } : null
+    }));
   } catch (error) {
     console.error("Error fetching users with subscription:", error);
     throw new Error("Failed to fetch users.");
