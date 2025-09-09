@@ -180,7 +180,7 @@ export default function HomePage() {
             <div className="text-center animate-fade-in">
                 <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">
                     Gerencie suas Finanças com
-                    <span className="text-yellow-300">Inteligência</span>
+                    <span className="text-yellow-300"> Inteligência</span>
                 </h1>
                 <p className="text-xl md:text-2xl mb-8 max-w-3xl mx-auto leading-relaxed opacity-90">
                     O SIGEF é o sistema completo para controlar produtos, vendas, dívidas e obter insights poderosos com IA para seu negócio
