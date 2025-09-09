@@ -29,7 +29,7 @@ export const handleExport = async () => {
 
   const link = document.createElement('a');
   link.href = url;
-  link.download = `dyfinzo_backup_${new Date().toISOString().split('T')[0]}.json`; // Filename e.g., vendas_tranquilas_backup_2023-10-27.json
+  link.download = `sigef_backup_${new Date().toISOString().split('T')[0]}.json`; // Filename e.g., vendas_tranquilas_backup_2023-10-27.json
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
