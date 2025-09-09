@@ -222,30 +222,32 @@ export default function InsightsPage() {
                     <p className="text-sm text-muted-foreground">
                       {analysisResult.balanceSheetSummary.summary}
                     </p>
-                    <div className="grid grid-cols-4 gap-4 text-center">
-                      <div>
-                        <p className="text-xs text-muted-foreground">Ativos (Estoque)</p>
-                        <p className="font-semibold text-green-600">
-                          {formatValue(analysisResult.balanceSheetSummary.approxAssets)}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground">Passivos (Dívidas)</p>
-                        <p className="font-semibold text-red-600">
-                          {formatValue(analysisResult.balanceSheetSummary.approxLiabilities)}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground">Perdas Totais</p>
-                        <p className="font-semibold text-red-600">
-                          {formatValue(analysisResult.balanceSheetSummary.totalLoss)}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground">Patrimônio Líq.</p>
-                        <p className={`font-bold ${analysisResult.balanceSheetSummary.approxNetWorth >= 0 ? 'text-primary-foreground' : 'text-destructive'}`}>
-                          {formatValue(analysisResult.balanceSheetSummary.approxNetWorth)}
-                        </p>
+                    <div className="overflow-x-auto">
+                      <div className="grid grid-cols-4 gap-4 text-center min-w-[500px] lg:min-w-full">
+                        <div>
+                          <p className="text-xs text-muted-foreground">Ativos (Estoque)</p>
+                          <p className="font-semibold text-green-600">
+                            {formatValue(analysisResult.balanceSheetSummary.approxAssets)}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground">Passivos (Dívidas)</p>
+                          <p className="font-semibold text-red-600">
+                            {formatValue(analysisResult.balanceSheetSummary.approxLiabilities)}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground">Perdas Totais</p>
+                          <p className="font-semibold text-red-600">
+                            {formatValue(analysisResult.balanceSheetSummary.totalLoss)}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground">Patrimônio Líq.</p>
+                          <p className={`font-bold ${analysisResult.balanceSheetSummary.approxNetWorth >= 0 ? 'text-primary-foreground' : 'text-destructive'}`}>
+                            {formatValue(analysisResult.balanceSheetSummary.approxNetWorth)}
+                          </p>
+                        </div>
                       </div>
                     </div>
                   </AccordionContent>
