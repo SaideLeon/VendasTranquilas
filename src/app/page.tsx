@@ -139,6 +139,34 @@ export default function HomePage() {
                         </Link>
                     </div>
                 </div>
+                <div className="md:hidden">
+                    <Sheet>
+                        <SheetTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                                <Menu className="h-6 w-6" />
+                                <span className="sr-only">Abrir menu</span>
+                            </Button>
+                        </SheetTrigger>
+                        <SheetContent side="right" className="w-full max-w-xs">
+                            <div className="flex flex-col space-y-6 p-6">
+                                <SheetClose asChild>
+                                    <a href="#features" className="text-gray-800 hover:text-teal-600 text-lg">Recursos</a>
+                                </SheetClose>
+                                <SheetClose asChild>
+                                    <a href="#benefits" className="text-gray-800 hover:text-teal-600 text-lg">Benefícios</a>
+                                </SheetClose>
+                                <SheetClose asChild>
+                                    <a href="#pricing" className="text-gray-800 hover:text-teal-600 text-lg">Preços</a>
+                                </SheetClose>
+                                <SheetClose asChild>
+                                    <Link href="/login" className="bg-teal-600 hover:bg-teal-700 text-white px-6 py-3 rounded-lg font-semibold text-lg text-center transition duration-300">
+                                        Começar Agora
+                                    </Link>
+                                </SheetClose>
+                            </div>
+                        </SheetContent>
+                    </Sheet>
+                </div>
             </div>
         </div>
     </nav>
