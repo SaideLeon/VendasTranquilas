@@ -11,6 +11,9 @@ export const metadata: Metadata = {
   title: "SIGEF - Sistema Intuitivo de Gestão Financeira",
   description: "Sistema Intuitivo de Gestão Financeira",
   manifest: "/manifest.json",
+  icons: {
+    icon: '/logo.svg',
+  },
 };
 
 export default function RootLayout({
