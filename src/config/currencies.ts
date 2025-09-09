@@ -21,7 +21,7 @@ export const SUPPORTED_CURRENCIES: CurrencyConfig[] = [
   // Note: East Timor uses USD, Equatorial Guinea uses XAF. Locales help formatting.
 ];
 
-export const DEFAULT_CURRENCY_CODE = 'BRL';
+export const DEFAULT_CURRENCY_CODE = 'MZN';
 
 export const getCurrencyConfig = (code: string): CurrencyConfig | undefined => {
   return SUPPORTED_CURRENCIES.find((c) => c.code === code);
