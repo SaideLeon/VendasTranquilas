@@ -55,21 +55,25 @@ export default function InsightsPage() {
   const { products, sales, debts, currency, initializeData } = useStore(); // Get initializeData from store
   const [analysisResult, setAnalysisResult] =
     useState<FinancialAnalysisOutput | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSyncing, setIsSyncing] = useState(false); // State for sync button
+  const [processState, setProcessState] = useState<'idle' | 'syncing' | 'analyzing'>('idle');
   const [error, setError] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<ProductAnalysisDetail | null>(null);
   const [showLosses, setShowLosses] = useState(false);
 
-  const handleAnalyze = async () => {
-    setIsLoading(true);
+  const handleFinancialAnalysis = async () => {
+    setProcessState('syncing');
     setError(null);
     setAnalysisResult(null);
+
     try {
-      // Map data to match the expected input schema (using actual store data)
+      // Step 1: Sync data
+      await initializeData();
+
+      // Step 2: Analyze data
+      setProcessState('analyzing');
       const inputData = {
-        products: products.map(p => ({ ...p, createdAt: p.createdAt ?? new Date(0).toISOString() })), // Ensure createdAt is string
-        sales: sales.map(s => ({ ...s, createdAt: s.createdAt ?? new Date(0).toISOString(), profit: s.profit ?? 0 })), // Ensure createdAt is string and profit exists
+        products: products.map(p => ({ ...p, createdAt: p.createdAt ?? new Date(0).toISOString() })),
+        sales: sales.map(s => ({ ...s, createdAt: s.createdAt ?? new Date(0).toISOString(), profit: s.profit ?? 0 })),
         debts: debts.map(d => ({
           ...d,
           dueDate: d.dueDate ? new Date(d.dueDate).toISOString() : null,
@@ -80,33 +84,16 @@ export default function InsightsPage() {
       };
       const result = await analyzeFinances(inputData);
       setAnalysisResult(result);
-    } catch (err) {
-      console.error('Financial analysis failed:', err);
-      setError(
-        err instanceof Error
-          ? err.message
-          : 'Ocorreu um erro ao gerar a análise.'
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
-  const handleSync = async () => {
-    setIsSyncing(true);
-    setError(null);
-    try {
-      await initializeData();
-      // Optionally, show a success message to the user
     } catch (err) {
-      console.error('Data sync failed:', err);
+      console.error('Financial analysis process failed:', err);
       setError(
         err instanceof Error
           ? err.message
-          : 'Ocorreu um erro ao sincronizar os dados.'
+          : 'Ocorreu um erro durante o processo.'
       );
     } finally {
-      setIsSyncing(false);
+      setProcessState('idle');
     }
   };
 
@@ -163,12 +150,17 @@ export default function InsightsPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="flex items-center gap-2">
-            <Button onClick={handleAnalyze} disabled={isLoading || isSyncing}>
-              {isLoading ? 'Analisando...' : 'Gerar Análise Financeira'}
-            </Button>
-            <Button onClick={handleSync} disabled={isLoading || isSyncing} variant="outline">
-              <RefreshCw className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
-              <span className="ml-2">{isSyncing ? 'Sincronizando...' : 'Sincronizar Dados'}</span>
+            <Button onClick={handleFinancialAnalysis} disabled={processState !== 'idle'}>
+              {processState === 'syncing' ? (
+                <>
+                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                  Sincronizando...
+                </>
+              ) : processState === 'analyzing' ? (
+                'Analisando...'
+              ) : (
+                'Gerar Análise Financeira'
+              )}
             </Button>
             {error && (
               <Alert variant="destructive" className="mt-4">
@@ -180,7 +172,7 @@ export default function InsightsPage() {
           </CardContent>
         </Card>
 
-        {isLoading && (
+        {processState !== 'idle' && (
           <Card>
             <CardHeader>
               <Skeleton className="h-6 w-48" />
@@ -195,7 +187,7 @@ export default function InsightsPage() {
           </Card>
         )}
 
-        {analysisResult && !isLoading && (
+        {analysisResult && processState === 'idle' && (
           <Card className="bg-card/80 backdrop-blur-sm">
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
