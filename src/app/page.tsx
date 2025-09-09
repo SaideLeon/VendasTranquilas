@@ -4,7 +4,7 @@ import React, { useEffect } from 'react';
 import Link from 'next/link';
 import Head from 'next/head';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';                                                    │
+import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';
 import { Menu } from 'lucide-react';    
 export default function HomePage() {
   useEffect(() => {
