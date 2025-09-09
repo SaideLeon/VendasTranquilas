@@ -439,7 +439,7 @@ export default function HomePage() {
                     </div>
                     <div className="text-center mb-8">
                         <h3 className="text-2xl font-bold text-gray-900 mb-2">Profissional</h3>
-                        <div className="text-4xl font-bold text-gray-900 mb-1">R$ 29</div>
+                        <div className="text-4xl font-bold text-gray-900 mb-1">200 MT</div>
                         <div className="text-gray-600">/mês</div>
                     </div>
                     <ul className="space-y-4 mb-8">
@@ -740,6 +740,17 @@ export default function HomePage() {
                     © 2024 SIGEF. Todos os direitos reservados.
                 </p>
                 <div className="flex space-x-6 mt-4 md:mt-0">
+                    <a href="#" className="text-gray-400 hover:text-white text-sm transition duration-300">Política de Privacidade</a>
+                    <a href="#" className="text-gray-400 hover:text-white text-sm transition duration-300">Termos de Uso</a>
+                    <a href="#" className="text-gray-400 hover:text-white text-sm transition duration-300">Cookies</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+    </div>
+    </>
+  );
+}mt-0">
                     <a href="#" className="text-gray-400 hover:text-white text-sm transition duration-300">Política de Privacidade</a>
                     <a href="#" className="text-gray-400 hover:text-white text-sm transition duration-300">Termos de Uso</a>
                     <a href="#" className="text-gray-400 hover:text-white text-sm transition duration-300">Cookies</a>
