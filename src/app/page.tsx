@@ -367,7 +367,7 @@ export default function HomePage() {
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div className="bg-white bg-opacity-20 rounded-lg p-4">
-                                <div className="text-2xl font-bold">R$ 15.430</div>
+                                <div className="text-2xl font-bold">15.430 MT</div>
                                 <div className="text-sm opacity-75">Faturamento</div>
                             </div>
                             <div className="bg-white bg-opacity-20 rounded-lg p-4">
@@ -398,7 +398,7 @@ export default function HomePage() {
                 <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-8 relative">
                     <div className="text-center mb-8">
                         <h3 className="text-2xl font-bold text-gray-900 mb-2">Gratuito</h3>
-                        <div className="text-4xl font-bold text-gray-900 mb-1">R$ 0</div>
+                        <div className="text-4xl font-bold text-gray-900 mb-1">0,00 MT</div>
                         <div className="text-gray-600">Para sempre</div>
                     </div>
                     <ul className="space-y-4 mb-8">
