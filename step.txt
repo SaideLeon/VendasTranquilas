@@ -1,0 +1,11 @@
+Crie o painel administrativo. Ele será uma nova página onde um administrador, poderá ver todos os
+  usuários e gerenciar as assinaturas deles.
+
+  Faça isso em etapas:
+
+   1. Criar a página do painel administrativo em /admin.
+   2. Proteger a página para que apenas usuários com a função ADMIN possam acessá-la.
+   3. Listar todos os usuários e os detalhes de suas assinaturas.
+   4. Adicionar controles para administrador poder ativar, desativar e renovar as assinaturas.
+
+ 

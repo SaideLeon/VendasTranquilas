@@ -228,3 +228,81 @@ export async function getInitialData() {
     ]);
     return { products, sales, debts };
 }
+
+// --- Admin Actions ---
+export async function getAllUsersWithSubscription() {
+  const user = await getUser();
+  // NOTE: The `role` property needs to be added to the session user type
+  if ((user as any).role !== 'ADMIN') {
+    throw new Error("Unauthorized: Only admins can access this resource.");
+  }
+
+  try {
+    const users = await prisma.user.findMany({
+      include: {
+        subscription: {
+          include: {
+            plan: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+    // Convert dates to string to make them serializable for client components
+    return JSON.parse(JSON.stringify(users));
+  } catch (error) {
+    console.error("Error fetching users with subscription:", error);
+    throw new Error("Failed to fetch users.");
+  }
+}
+
+export async function getPlans() {
+    const user = await getUser();
+    if ((user as any).role !== 'ADMIN') {
+        throw new Error("Unauthorized");
+    }
+    return prisma.plan.findMany();
+}
+
+export async function updateUserSubscription(userId: string, planId: string, durationInDays: number) {
+    const admin = await getUser();
+    if ((admin as any).role !== 'ADMIN') {
+        throw new Error("Unauthorized");
+    }
+
+    const startDate = new Date();
+    const endDate = new Date();
+    endDate.setDate(startDate.getDate() + durationInDays);
+
+    return prisma.subscription.upsert({
+        where: { userId },
+        update: {
+            planId,
+            startDate,
+            endDate,
+            isActive: true,
+            activatedById: admin.id,
+        },
+        create: {
+            userId,
+            planId,
+            startDate,
+            endDate,
+            activatedById: admin.id,
+        },
+    });
+}
+
+export async function deactivateSubscription(subscriptionId: string) {
+    const admin = await getUser();
+    if ((admin as any).role !== 'ADMIN') {
+        throw new Error("Unauthorized");
+    }
+
+    return prisma.subscription.update({
+        where: { id: subscriptionId },
+        data: { isActive: false },
+    });
+}
