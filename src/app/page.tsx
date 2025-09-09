@@ -3,7 +3,9 @@
 import React, { useEffect } from 'react';
 import Link from 'next/link';
 import Head from 'next/head';
-
+import { Button } from '@/components/ui/button';
+import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';                                                    │
+import { Menu } from 'lucide-react';    
 export default function HomePage() {
   useEffect(() => {
     // Smooth scrolling for anchor links
@@ -750,15 +752,4 @@ export default function HomePage() {
     </div>
     </>
   );
-}mt-0">
-                    <a href="#" className="text-gray-400 hover:text-white text-sm transition duration-300">Política de Privacidade</a>
-                    <a href="#" className="text-gray-400 hover:text-white text-sm transition duration-300">Termos de Uso</a>
-                    <a href="#" className="text-gray-400 hover:text-white text-sm transition duration-300">Cookies</a>
-                </div>
-            </div>
-        </div>
-    </footer>
-    </div>
-    </>
-  );
-}
+} 
