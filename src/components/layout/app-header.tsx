@@ -5,7 +5,7 @@ import { useSession, signIn, signOut } from "next-auth/react";
 import Link from 'next/link';
 import { usePathname } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"; 
-import { Package, ShoppingCart, BarChart3, Wifi, WifiOff, Cloud, Upload, Download, Landmark, HandCoins, BrainCircuit } from "lucide-react"; // Added HandCoins for Debts, BrainCircuit for Insights
+import { Package, ShoppingCart, BarChart3, Wifi, WifiOff, Cloud, Upload, Download, Landmark, HandCoins, BrainCircuit, Shield } from "lucide-react"; // Added HandCoins for Debts, BrainCircuit for Insights
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useStore } from "@/store/store";
@@ -294,6 +294,14 @@ export default function AppHeader() {
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
+                {session.user?.role === 'admin' && (
+                  <DropdownMenuItem asChild>
+                    <Link href="/admin">
+                      <Shield className="mr-2 h-4 w-4" />
+                      Admin
+                    </Link>
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem onClick={() => signOut()}>
                   Sair
                 </DropdownMenuItem>
