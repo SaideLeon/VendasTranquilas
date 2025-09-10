@@ -26,6 +26,7 @@ export default function RootLayout({
   return (
     <html lang="pt-BR">
       <head>
+        <meta charSet="UTF-8" />
         <meta name="theme-color" content="#000000" />
       </head>
       <body

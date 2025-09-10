@@ -49,7 +49,7 @@ export default function ProdutosClientPage({ initialData }: { initialData: { pro
       console.error("Error saving product:", error);
       toast({
         title: "Erro ao Salvar",
-        description: "NÃ£o foi possÃvel salvar o produto.",
+        description: "Não foi possível salvar o produto.",
         variant: "destructive",
       });
     }
@@ -125,7 +125,7 @@ export default function ProdutosClientPage({ initialData }: { initialData: { pro
       <div className="md:hidden flex justify-end mb-4">
         <Button onClick={toggleFormVisibility} variant="outline" className="bg-accent hover:bg-accent/90 text-accent-foreground">
           <PlusCircle className="mr-2 h-4 w-4" />
-          {isFormVisible ? (editingProduct ? "Cancelar EdiÃ§Ã£o" : "Fechar FormulÃ¡rio") : "Novo Produto"}
+          {isFormVisible ? (editingProduct ? "Cancelar Edição" : "Fechar Formulário") : "Novo Produto"}
         </Button>
       </div>
 
@@ -159,4 +159,6 @@ export default function ProdutosClientPage({ initialData }: { initialData: { pro
        )}
     </div>
   );
+}
+ );
 }

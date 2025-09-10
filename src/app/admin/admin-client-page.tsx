@@ -60,7 +60,7 @@ function ManageSubscriptionModal({ user, plans, onSubscriptionUpdate }: { user: 
       onSubscriptionUpdate(); // Callback to refresh data
       setIsOpen(false);
     } catch (error) {
-      toast({ title: "Erro", description: "NÃ£o foi possÃvel renovar a assinatura.", variant: "destructive" });
+      toast({ title: "Erro", description: "Não foi possível renovar a assinatura.", variant: "destructive" });
     }
   };
 
