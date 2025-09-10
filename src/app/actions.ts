@@ -1,23 +1,16 @@
-export async function createPlan(planName: PlanName) {
-    const admin = await getUser();
-    if ((admin as any).role !== 'ADMIN') {
-        throw new Error("Unauthorized");
-    }
+'use server';
 
-    const existingPlan = await prisma.plan.findUnique({
-        where: { name: planName },
-    });
+import { prisma } from '@/lib/prisma';
+import type { Product, Sale, Debt, DebtStatus } from '@/types';
+import { calculateUnitCost } from '@/types';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import type { PlanName } from '@prisma/client';
 
-    if (existingPlan) {
-        throw new Error(`O plano "${planName}" já existe.`);
-    }
-
-    return prisma.plan.create({
-        data: {
-            name: planName,
-        },
-    });
-}ession.user || !session.user.id) {
+// --- Helper to get authenticated user ---
+async function getUser() {
+  const session = await getServerSession(authOptions);
+  if (!session || !session.user || !session.user.id) {
     throw new Error("Not authenticated");
   }
   return session.user;
@@ -240,7 +233,6 @@ export async function getInitialData() {
 // --- Admin Actions ---
 export async function getAllUsersWithSubscription() {
   const user = await getUser();
-  // NOTE: The `role` property needs to be added to the session user type
   if ((user as any).role !== 'ADMIN') {
     throw new Error("Unauthorized: Only admins can access this resource.");
   }
@@ -290,6 +282,27 @@ export async function getPlans() {
         throw new Error("Unauthorized");
     }
     return prisma.plan.findMany();
+}
+
+export async function createPlan(planName: PlanName) {
+    const admin = await getUser();
+    if ((admin as any).role !== 'ADMIN') {
+        throw new Error("Unauthorized");
+    }
+
+    const existingPlan = await prisma.plan.findUnique({
+        where: { name: planName },
+    });
+
+    if (existingPlan) {
+        throw new Error(`O plano "${planName}" já existe.`);
+    }
+
+    return prisma.plan.create({
+        data: {
+            name: planName,
+        },
+    });
 }
 
 export async function updateUserSubscription(userId: string, planId: string, durationInDays: number) {
