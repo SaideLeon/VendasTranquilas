@@ -137,7 +137,7 @@ export default function AdminClientPage({ users: initialUsers, plans }: AdminCli
                     <TableHead>Plano</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Expira em</TableHead>
-                    <TableHead className="text-right">AÃ§Ãµes</TableHead>
+                    <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -180,4 +180,5 @@ export default function AdminClientPage({ users: initialUsers, plans }: AdminCli
         </CardContent>
     </Card>
   );
+}
 }
