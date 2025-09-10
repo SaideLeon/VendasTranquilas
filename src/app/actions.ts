@@ -256,7 +256,7 @@ export async function getAllUsersWithSubscription() {
         }
       },
       orderBy: {
-        createdAt: 'desc',
+        name: 'asc',
       },
     });
     
