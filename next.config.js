@@ -1,7 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // reactStrictMode: true, // Strict Mode is recommended and default in Next.js 14+
-  swcMinify: true, // Use SWC for faster builds
   typescript: {
     // Warns during build if there are type errors, but allows build completion.
     // It's recommended to set this to `false` and fix type errors for production readiness.
