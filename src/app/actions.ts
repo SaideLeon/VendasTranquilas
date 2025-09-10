@@ -244,7 +244,6 @@ export async function getAllUsersWithSubscription() {
         name: true,
         email: true,
         role: true,
-        createdAt: true,
         subscription: {
           select: {
             id: true,
@@ -262,7 +261,6 @@ export async function getAllUsersWithSubscription() {
     
     return users.map(user => ({
         ...user,
-        createdAt: user.createdAt.toISOString(),
         subscription: user.subscription ? {
             ...user.subscription,
             startDate: user.subscription.startDate.toISOString(),
