@@ -14,7 +14,8 @@ import { Button } from '@/components/ui/button';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { User, Shield } from 'lucide-react';
+import { User, Shield, Terminal } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { deactivateSubscription, updateUserSubscription, getPlans, getAllUsersWithSubscription } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -119,6 +120,29 @@ export default function AdminClientPage({ users: initialUsers, plans }: AdminCli
         const updatedUsers = await getAllUsersWithSubscription();
         setUsers(updatedUsers);
     };
+
+    if (plans.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Shield className="h-6 w-6" />
+            Painel Administrativo
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Alert variant="destructive">
+            <Terminal className="h-4 w-4" />
+            <AlertTitle>Ação Necessária: Cadastrar Planos</AlertTitle>
+            <AlertDescription>
+              <p>Nenhum plano de assinatura foi encontrado no banco de dados.</p>
+              <p className="mt-2">Para poder gerenciar as assinaturas dos usuários, você precisa primeiro adicionar os planos disponíveis (ex: GRATUITO, PROFISSIONAL, EMPRESARIAL) à sua tabela <strong>Plan</strong> no banco de dados.</p>
+            </AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>
