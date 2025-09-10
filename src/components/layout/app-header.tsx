@@ -294,7 +294,7 @@ export default function AppHeader() {
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                {session.user?.role === 'admin' && (
+                {session.user?.role === 'ADMIN' && (
                   <DropdownMenuItem asChild>
                     <Link href="/admin">
                       <Shield className="mr-2 h-4 w-4" />
