@@ -1,15 +1,23 @@
-'use server';
+export async function createPlan(planName: PlanName) {
+    const admin = await getUser();
+    if ((admin as any).role !== 'ADMIN') {
+        throw new Error("Unauthorized");
+    }
 
-import { prisma } from '@/lib/prisma';
-import type { Product, Sale, Debt, DebtStatus } from '@/types';
-import { calculateUnitCost } from '@/types';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+    const existingPlan = await prisma.plan.findUnique({
+        where: { name: planName },
+    });
 
-// --- Helper to get authenticated user ---
-async function getUser() {
-  const session = await getServerSession(authOptions);
-  if (!session || !session.user || !session.user.id) {
+    if (existingPlan) {
+        throw new Error(`O plano "${planName}" já existe.`);
+    }
+
+    return prisma.plan.create({
+        data: {
+            name: planName,
+        },
+    });
+}ession.user || !session.user.id) {
     throw new Error("Not authenticated");
   }
   return session.user;

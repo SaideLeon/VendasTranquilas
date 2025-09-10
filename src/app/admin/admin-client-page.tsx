@@ -14,8 +14,9 @@ import { Button } from '@/components/ui/button';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { User, Shield, Terminal } from 'lucide-react';
+import { User, Shield, Terminal, CheckCircle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { CreatePlanForm } from '@/components/admin/create-plan-form';
 import { deactivateSubscription, updateUserSubscription, getPlans, getAllUsersWithSubscription } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -121,42 +122,47 @@ export default function AdminClientPage({ users: initialUsers, plans }: AdminCli
         setUsers(updatedUsers);
     };
 
-    if (plans.length === 0) {
     return (
+    <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Shield className="h-6 w-6" />
-            Painel Administrativo
-          </CardTitle>
+          <CardTitle>Gerenciar Planos</CardTitle>
         </CardHeader>
-        <CardContent>
-          <Alert variant="destructive">
-            <Terminal className="h-4 w-4" />
-            <AlertTitle>Ação Necessária: Cadastrar Planos</AlertTitle>
-            <AlertDescription>
-              <p>Nenhum plano de assinatura foi encontrado no banco de dados.</p>
-              <p className="mt-2">Para poder gerenciar as assinaturas dos usuários, você precisa primeiro adicionar os planos disponíveis (ex: GRATUITO, PROFISSIONAL, EMPRESARIAL) à sua tabela <strong>Plan</strong> no banco de dados.</p>
-            </AlertDescription>
-          </Alert>
+        <CardContent className="space-y-4">
+          <div>
+            <h3 className="font-medium mb-2">Planos Existentes</h3>
+            {plans.length > 0 ? (
+              <ul className="space-y-1">
+                {plans.map(plan => (
+                  <li key={plan.id} className="flex items-center gap-2 text-sm">
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    <span>{plan.name}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-sm text-muted-foreground">Nenhum plano cadastrado ainda. Use o formulário abaixo para começar.</p>
+            )}
+          </div>
+          <div className="border-t pt-4">
+            <h3 className="font-medium mb-2">Cadastrar Novo Plano</h3>
+            <CreatePlanForm />
+          </div>
         </CardContent>
       </Card>
-    );
-  }
 
-  return (
-    <Card>
+      <Card>
         <CardHeader>
             <CardTitle className="flex items-center gap-2">
                 <Shield className="h-6 w-6" />
-                Painel Administrativo
+                Gerenciar Usuários
             </CardTitle>
         </CardHeader>
         <CardContent>
             <Table>
                 <TableHeader>
                 <TableRow>
-                    <TableHead>UsuÃ¡rio</TableHead>
+                    <TableHead>Usuário</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Plano</TableHead>
                     <TableHead>Status</TableHead>
@@ -203,5 +209,6 @@ export default function AdminClientPage({ users: initialUsers, plans }: AdminCli
             </Table>
         </CardContent>
     </Card>
+    </div>
   );
 }
