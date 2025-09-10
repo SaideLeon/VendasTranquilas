@@ -271,7 +271,10 @@ export async function getAllUsersWithSubscription() {
     }));
   } catch (error) {
     console.error("Error fetching users with subscription:", error);
-    throw new Error("Failed to fetch users.");
+    if (error instanceof Error) {
+        throw new Error(`Failed to fetch users: ${error.message}`);
+    }
+    throw new Error("Failed to fetch users due to an unknown error.");
   }
 }
 
