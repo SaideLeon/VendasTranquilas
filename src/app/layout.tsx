@@ -4,6 +4,8 @@ import "./globals.css";
 import { cn } from "@/lib/utils";
 import AppSessionProvider from "@/components/layout/session-provider";
 import AppLayout from '@/components/layout/app-layout';
+import React, { useEffect } from 'react';
+
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -22,6 +24,17 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  useEffect(() => {
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').then(registration => {
+          console.log('Service Worker registrado com sucesso:', registration.scope);
+        }).catch(error => {
+          console.log('Falha ao registrar o Service Worker:', error);
+        });
+      });
+    }
+  }, []);
   return (
     <html lang="pt-BR">
       <head>
