@@ -160,5 +160,3 @@ export default function ProdutosClientPage({ initialData }: { initialData: { pro
     </div>
   );
 }
- );
-}
