@@ -16,16 +16,16 @@ export default withAuth(
     if (isAdminRoute && token?.role !== 'ADMIN') {
       return NextResponse.redirect(new URL('/produtos', request.url));
     }
+
+    // If no redirection is needed, continue to the requested page
+    return NextResponse.next();
   },
   {
     callbacks: {
       authorized: ({ req, token }) => {
-        // If they are trying to access /login, let them pass to the middleware.
-        // The middleware will redirect them if they are already logged in.
         if (req.nextUrl.pathname === '/login') {
           return true;
         }
-        // For any other matched route, they must be logged in.
         return !!token;
       },
     },
@@ -38,11 +38,17 @@ export default withAuth(
 export const config = {
   matcher: [
     '/login',
+    '/produtos',
     '/produtos/:path*',
+    '/vendas',
     '/vendas/:path*',
+    '/dividas',
     '/dividas/:path*',
+    '/relatorios',
     '/relatorios/:path*',
+    '/insights',
     '/insights/:path*',
+    '/admin',
     '/admin/:path*',
   ],
 };
