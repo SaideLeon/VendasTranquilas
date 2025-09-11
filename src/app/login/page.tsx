@@ -1,20 +1,11 @@
 'use client'
 
 import { signIn, useSession } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
-import { useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 
 export default function LoginPage() {
-  const { data: session, status } = useSession()
-  const router = useRouter()
-
-  useEffect(() => {
-    if (status === 'authenticated') {
-      router.push('/produtos') // Or any other protected page
-    }
-  }, [status, router])
+  const { status } = useSession()
 
   if (status === 'loading' || status === 'authenticated') {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div> // Or a spinner

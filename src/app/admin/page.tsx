@@ -1,17 +1,7 @@
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
-import { redirect } from 'next/navigation';
 import { getAllUsersWithSubscription, getPlans } from '@/app/actions';
 import AdminClientPage from './admin-client-page';
 
 export default async function AdminPage() {
-  const session = await getServerSession(authOptions);
-
-  if (!session || (session.user as any).role !== 'ADMIN') {
-    // You can also redirect to a custom unauthorized page
-    redirect('/'); 
-  }
-
   try {
     const users = await getAllUsersWithSubscription();
     const plans = await getPlans();
