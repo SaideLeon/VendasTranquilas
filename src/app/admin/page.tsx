@@ -1,6 +1,8 @@
 import { getAllUsersWithSubscription, getPlans } from '@/app/actions';
 import AdminClientPage from './admin-client-page';
 
+export const dynamic = 'force-dynamic';
+
 export default async function AdminPage() {
   try {
     const users = await getAllUsersWithSubscription();

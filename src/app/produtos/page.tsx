@@ -2,6 +2,8 @@
 import { getProducts } from "@/app/actions";
 import ProdutosClientPage from "./produtos-client-page";
 
+export const dynamic = 'force-dynamic';
+
 export default async function ProdutosPage() {
   // The middleware now protects this page, so the try/catch for redirection is no longer needed.
   // The `getProducts` action itself will throw an error if the user is not authenticated,
