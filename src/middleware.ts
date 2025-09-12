@@ -6,29 +6,23 @@ export default withAuth(
     const { token } = request.nextauth;
     const { pathname } = request.nextUrl;
 
-    // If user is logged in and tries to access /login, redirect them
+    // Redirecionar usuário logado tentando acessar /login → vai para /produtos
     if (token && pathname === '/login') {
-        return NextResponse.redirect(new URL('/produtos', request.url));
-    }
-
-    // If user is trying to access admin routes
-    const isAdminRoute = pathname.startsWith('/admin');
-    if (isAdminRoute && token?.role !== 'ADMIN') {
       return NextResponse.redirect(new URL('/produtos', request.url));
     }
 
-    // If no redirection is needed, continue to the requested page
+    // Proteger rotas de admin
+    if (pathname.startsWith('/admin') && token?.role !== 'ADMIN') {
+      return NextResponse.redirect(new URL('/produtos', request.url));
+    }
+
     return NextResponse.next();
   },
   {
     callbacks: {
-      authorized: ({ req, token }) => {
-        if (req.nextUrl.pathname === '/login') {
-          return true;
-        }
-        return !!token;
-      },
+      authorized: ({ token }) => !!token, // simples: só exige estar logado
     },
+    // Deixe o NextAuth usar a página de login normal sem travar o fluxo OAuth
     pages: {
       signIn: '/login',
     },
