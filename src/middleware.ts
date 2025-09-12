@@ -1,3 +1,4 @@
+// src/middleware.ts
 import { withAuth, type NextRequestWithAuth } from 'next-auth/middleware';
 import { NextResponse } from 'next/server';
 
@@ -20,10 +21,11 @@ export default withAuth(
   },
   {
     callbacks: {
-      authorized: ({ token }) => !!token, // simples: só exige estar logado
+      // Agora apenas verifica se existe token
+      authorized: ({ token }) => !!token,
     },
-    // Deixe o NextAuth usar a página de login normal sem travar o fluxo OAuth
     pages: {
+      // Mantém a página de login padrão do NextAuth
       signIn: '/login',
     },
   }
