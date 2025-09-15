@@ -39,6 +39,6 @@ export const AdminAPI = {
     getAllUsersWithSubscription: () => api.get('/admin/users'),
     getPlans: () => api.get('/admin/plans'),
     createPlan: (planName: PlanName) => api.post('/admin/plans', { name: planName }),
-    updateUserSubscription: (userId: string, planId: string, durationInDays: number) => api.post(`/admin/users/${userId}/subscription`, { planId, durationInDays }),
+    updateUserSubscription: (userId: string, planId: string, durationInDays: number) => api.put(`/admin/users/${userId}/subscription`, { planId, durationInDays }),
     deactivateSubscription: (subscriptionId: string) => api.patch(`/admin/subscriptions/${subscriptionId}/deactivate`),
 };
