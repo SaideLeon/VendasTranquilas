@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { useStore } from '@/store/store';
-import { analyzeFinances } from '@/ai/flows/financial-analysis-flow';
-import type { FinancialAnalysisOutput } from '@/ai/types/financial-analysis';
+import { AiAPI } from '@/lib/endpoints';
+import type { FinancialAnalysisOutput } from '@/types';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -53,9 +53,9 @@ type ProductAnalysisDetail = FinancialAnalysisOutput['productAnalysis'][0];
 
 export default function InsightsPage() {
   const { token, isAuthenticating } = useAuth();
-  const { products, sales, debts, currency, initializeData, isLoading: isStoreLoading, error: storeError } = useStore();
+  const { sales, currency, initializeData, isLoading: isStoreLoading, error: storeError } = useStore();
   const [analysisResult, setAnalysisResult] = useState<FinancialAnalysisOutput | null>(null);
-  const [processState, setProcessState] = useState<'idle' | 'syncing' | 'analyzing'>('idle');
+  const [processState, setProcessState] = useState<'idle' | 'analyzing'>('idle');
   const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<ProductAnalysisDetail | null>(null);
   const [showLosses, setShowLosses] = useState(false);
@@ -67,33 +67,17 @@ export default function InsightsPage() {
   }, [token, initializeData]);
 
   const handleFinancialAnalysis = async () => {
-    setProcessState('syncing');
+    setProcessState('analyzing');
     setAnalysisError(null);
     setAnalysisResult(null);
 
     try {
-      await initializeData();
-      setProcessState('analyzing');
-      const inputData = {
-        products: products.map(p => ({ ...p, createdAt: p.createdAt ?? new Date(0).toISOString() })),
-        sales: sales.map(s => ({ ...s, createdAt: s.createdAt ?? new Date(0).toISOString(), profit: s.profit ?? 0 })),
-        debts: debts.map(d => ({
-          ...d,
-          dueDate: d.dueDate ? new Date(d.dueDate).toISOString() : null,
-          createdAt: d.createdAt ?? new Date(0).toISOString(),
-          paidAt: d.paidAt ? new Date(d.paidAt).toISOString() : null,
-        })),
-        currencyCode: currency,
-      };
-      const result = await analyzeFinances(inputData);
-      setAnalysisResult(result);
-    } catch (err) {
+      const result = await AiAPI.analyze(currency);
+      setAnalysisResult(result.data);
+    } catch (err: any) {
       console.error('Financial analysis process failed:', err);
-      setAnalysisError(
-        err instanceof Error
-          ? err.message
-          : 'Ocorreu um erro durante o processo.'
-      );
+      const errorMessage = err.response?.data?.message || err.message || 'Ocorreu um erro durante o processo.';
+      setAnalysisError(errorMessage);
     } finally {
       setProcessState('idle');
     }
@@ -155,9 +139,7 @@ export default function InsightsPage() {
           </CardHeader>
           <CardContent className="flex items-center gap-2">
             <Button onClick={handleFinancialAnalysis} disabled={processState !== 'idle'}>
-              {processState === 'syncing' ? (
-                <><RefreshCw className="mr-2 h-4 w-4 animate-spin" /> Sincronizando...</>
-              ) : processState === 'analyzing' ? (
+              {processState === 'analyzing' ? (
                 'Analisando...'
               ) : (
                 'Gerar Análise Financeira'

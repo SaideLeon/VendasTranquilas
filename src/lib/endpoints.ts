@@ -48,3 +48,7 @@ export const AdminAPI = {
     createPlan: (planName: PlanName) => api.post('/admin/plans', { name: planName }),
     updateUserSubscription: (userId: string, data: SubscriptionUpdatePayload) => api.put(`/admin/users/${userId}/subscription`, { subscription: data }),
 };
+
+export const AiAPI = {
+    analyze: (currencyCode: string) => api.get('/ai/analyze-finances', { params: { currencyCode } })
+};

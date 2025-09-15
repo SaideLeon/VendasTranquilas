@@ -82,3 +82,37 @@ export const calculateUnitCost = (product: Product | undefined): UnitCostResult 
     }
     return { cost: product.acquisitionValue / effectiveInitialQty };
 };
+
+export interface FinancialAnalysisOutput {
+  balanceSheetSummary: {
+    approxAssets: number;
+    approxLiabilities: number;
+    approxNetWorth: number;
+    summary: string;
+    totalLoss: number;
+  };
+  debtAnalysis: {
+    totalReceivablesPending: number;
+    totalPayablesPending: number;
+    analysis: string;
+  };
+  riskAssessment: {
+    identifiedRisks: string[];
+    assessment: string;
+  };
+  recommendations: {
+    suggestions: string[];
+    priorities: string;
+  };
+  productAnalysis: Array<{
+    productId: string;
+    productName: string;
+    remainingQuantity: number;
+    lastSalePrice?: number | null;
+    potentialProfit?: number | null;
+    currentProfit: number;
+    totalLoss: number;
+  }>;
+  overallStatus: 'healthy' | 'needs_attention' | 'critical';
+  disclaimer: string;
+}
