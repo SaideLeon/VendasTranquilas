@@ -66,7 +66,18 @@ function ManageSubscriptionModal({ user, plans, onSubscriptionUpdate }: { user: 
       return;
     }
     try {
-      await AdminAPI.updateUserSubscription(user.id, selectedPlanId, 30);
+      const startDate = new Date();
+      const endDate = new Date();
+      endDate.setDate(startDate.getDate() + 30);
+
+      const subscriptionData = {
+        plan: { id: selectedPlanId },
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
+        isActive: true,
+      };
+
+      await AdminAPI.updateUserSubscription(user.id, subscriptionData);
       toast({ title: "Sucesso", description: `Assinatura de ${user.name} foi renovada/atualizada.` });
       onSubscriptionUpdate();
       setIsOpen(false);
@@ -78,7 +89,13 @@ function ManageSubscriptionModal({ user, plans, onSubscriptionUpdate }: { user: 
   const handleDeactivate = async () => {
     if (!user.subscription) return;
     try {
-      await AdminAPI.deactivateSubscription(user.subscription.id);
+      const subscriptionData = {
+          plan: { id: user.subscription.plan.id },
+          startDate: user.subscription.startDate,
+          endDate: user.subscription.endDate,
+          isActive: false,
+      };
+      await AdminAPI.updateUserSubscription(user.id, subscriptionData);
       toast({ title: "Sucesso", description: `Assinatura de ${user.name} foi desativada.` });
       onSubscriptionUpdate();
       setIsOpen(false);
