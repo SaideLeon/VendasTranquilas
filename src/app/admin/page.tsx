@@ -25,7 +25,7 @@ type UserWithSubscription = {
 type Plan = { id: string; name: string };
 
 export default function AdminPage() {
-  const { token, isAuthenticating } = useAuth();
+  const { token, user, isAuthenticating } = useAuth();
   const router = useRouter();
   const [isAdmin, setIsAdmin] = useState(false);
   const [users, setUsers] = useState<UserWithSubscription[]>([]);
@@ -36,15 +36,14 @@ export default function AdminPage() {
   useEffect(() => {
     if (isAuthenticating) return;
 
-    if (!token) {
+    if (!token || !user) {
       router.push('/login');
       return;
     }
 
     const checkAdminAndFetchData = async () => {
       try {
-        const meResponse = await AuthAPI.me();
-        if (meResponse.data.role !== 'ADMIN') {
+        if (user.role !== 'ADMIN') {
           router.push('/'); // Redirect non-admins
           return;
         }
@@ -65,7 +64,7 @@ export default function AdminPage() {
     };
 
     checkAdminAndFetchData();
-  }, [token, isAuthenticating, router]);
+  }, [token, user, isAuthenticating, router]);
 
   if (isAuthenticating || isLoading) {
     return (
