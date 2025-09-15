@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "https://sigef.cognick.qzz.io/api",
+  baseURL: "/api",
   headers: { "Content-Type": "application/json" },
 });
 

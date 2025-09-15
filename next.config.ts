@@ -4,6 +4,14 @@ import withPWA from 'next-pwa';
 /** @type {import('next').NextConfig} */
 const nextConfig: NextConfig = {
   /* config options here */
+  async rewrites() {
+    return [
+      {
+        source: '/api/:path*',
+        destination: 'https://sigef.cognick.qzz.io/api/:path*',
+      },
+    ]
+  },
   reactStrictMode: true, // Enable React strict mode for highlighting potential problems
   typescript: {
     // Dangerously allow production builds to successfully complete even if
