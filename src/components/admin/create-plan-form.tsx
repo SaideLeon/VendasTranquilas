@@ -3,7 +3,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -21,8 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { createPlan } from "@/app/actions";
-import type { PlanName } from "@prisma/client";
+import { AdminAPI, PlanName } from "@/lib/endpoints";
 
 const FormSchema = z.object({
   name: z.enum(['GRATUITO', 'PROFISSIONAL', 'EMPRESARIAL'], {
@@ -30,9 +28,12 @@ const FormSchema = z.object({
   }),
 });
 
-export function CreatePlanForm() {
+interface CreatePlanFormProps {
+  onPlanCreated: () => void;
+}
+
+export function CreatePlanForm({ onPlanCreated }: CreatePlanFormProps) {
   const { toast } = useToast();
-  const router = useRouter();
 
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
@@ -40,18 +41,17 @@ export function CreatePlanForm() {
 
   async function onSubmit(data: z.infer<typeof FormSchema>) {
     try {
-      await createPlan(data.name as PlanName);
+      await AdminAPI.createPlan(data.name as PlanName);
       toast({
         title: "Plano Criado",
         description: `O plano "${data.name}" foi criado com sucesso.`,
       });
-      // Atualiza os dados da página do servidor
-      router.refresh();
+      onPlanCreated(); // Refresh data in parent component
       form.reset({ name: undefined });
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Erro ao Criar Plano",
-        description: error instanceof Error ? error.message : "Ocorreu um erro desconhecido.",
+        description: error.response?.data?.message || "Ocorreu um erro desconhecido.",
         variant: "destructive",
       });
     }
@@ -66,7 +66,7 @@ export function CreatePlanForm() {
           render={({ field }) => (
             <FormItem className="flex-grow">
               <FormLabel>Nome do Plano</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <Select onValueChange={field.onChange} value={field.value || ''}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione um plano para cadastrar" />

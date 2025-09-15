@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
-import AppSessionProvider from "@/components/layout/session-provider";
 import AppLayout from '@/components/layout/app-layout';
 import ServiceWorkerRegistrar from "@/components/layout/service-worker-registrar";
 
@@ -35,10 +34,8 @@ export default function RootLayout({
           inter.variable
         )}
       >
-        <AppSessionProvider>
           <ServiceWorkerRegistrar />
           <AppLayout>{children}</AppLayout>
-        </AppSessionProvider>
       </body>
     </html>
   );

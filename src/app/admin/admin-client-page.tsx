@@ -14,10 +14,9 @@ import { Button } from '@/components/ui/button';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { User, Shield, Terminal, CheckCircle } from 'lucide-react';
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { User, Shield, CheckCircle } from 'lucide-react';
 import { CreatePlanForm } from '@/components/admin/create-plan-form';
-import { deactivateSubscription, updateUserSubscription, getPlans, getAllUsersWithSubscription } from '@/app/actions';
+import { AdminAPI } from '@/lib/endpoints';
 import { useToast } from '@/hooks/use-toast';
 import {
   Dialog,
@@ -35,11 +34,21 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-
-// Define types based on what actions return
-type UserWithSubscription = Awaited<ReturnType<typeof getAllUsersWithSubscription>>[0];
-type Plan = Awaited<ReturnType<typeof getPlans>>[0];
-
+// Define types based on the expected API response
+type UserWithSubscription = {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  subscription: {
+    id: string;
+    plan: { id: string; name: string };
+    startDate: string;
+    endDate: string;
+    isActive: boolean;
+  } | null;
+};
+type Plan = { id: string; name: string };
 
 interface AdminClientPageProps {
   users: UserWithSubscription[];
@@ -57,9 +66,9 @@ function ManageSubscriptionModal({ user, plans, onSubscriptionUpdate }: { user: 
       return;
     }
     try {
-      await updateUserSubscription(user.id, selectedPlanId, 30);
+      await AdminAPI.updateUserSubscription(user.id, selectedPlanId, 30);
       toast({ title: "Sucesso", description: `Assinatura de ${user.name} foi renovada/atualizada.` });
-      onSubscriptionUpdate(); // Callback to refresh data
+      onSubscriptionUpdate();
       setIsOpen(false);
     } catch (error) {
       toast({ title: "Erro", description: "Não foi possível renovar a assinatura.", variant: "destructive" });
@@ -69,12 +78,12 @@ function ManageSubscriptionModal({ user, plans, onSubscriptionUpdate }: { user: 
   const handleDeactivate = async () => {
     if (!user.subscription) return;
     try {
-      await deactivateSubscription(user.subscription.id);
+      await AdminAPI.deactivateSubscription(user.subscription.id);
       toast({ title: "Sucesso", description: `Assinatura de ${user.name} foi desativada.` });
       onSubscriptionUpdate();
       setIsOpen(false);
     } catch (error) {
-      toast({ title: "Erro", description: "NÃ£o foi possÃvel desativar a assinatura.", variant: "destructive" });
+      toast({ title: "Erro", description: "Não foi possível desativar a assinatura.", variant: "destructive" });
     }
   };
 
@@ -87,7 +96,7 @@ function ManageSubscriptionModal({ user, plans, onSubscriptionUpdate }: { user: 
         <DialogHeader>
           <DialogTitle>Gerenciar Assinatura de {user.name}</DialogTitle>
           <DialogDescription>
-            Selecione um plano para ativar ou renovar por 30 dias. A data de inÃcio serÃ¡ hoje.
+            Selecione um plano para ativar ou renovar por 30 dias. A data de início será hoje.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-4">
@@ -113,13 +122,14 @@ function ManageSubscriptionModal({ user, plans, onSubscriptionUpdate }: { user: 
   );
 }
 
-
-export default function AdminClientPage({ users: initialUsers, plans }: AdminClientPageProps) {
+export default function AdminClientPage({ users: initialUsers, plans: initialPlans }: AdminClientPageProps) {
     const [users, setUsers] = useState(initialUsers);
+    const [plans, setPlans] = useState(initialPlans);
 
-    const refreshUsers = async () => {
-        const updatedUsers = await getAllUsersWithSubscription();
-        setUsers(updatedUsers);
+    const refreshData = async () => {
+        const [usersRes, plansRes] = await Promise.all([AdminAPI.getAllUsersWithSubscription(), AdminAPI.getPlans()]);
+        setUsers(usersRes.data);
+        setPlans(plansRes.data);
     };
 
     return (
@@ -141,12 +151,12 @@ export default function AdminClientPage({ users: initialUsers, plans }: AdminCli
                 ))}
               </ul>
             ) : (
-              <p className="text-sm text-muted-foreground">Nenhum plano cadastrado ainda. Use o formulário abaixo para começar.</p>
+              <p className="text-sm text-muted-foreground">Nenhum plano cadastrado ainda.</p>
             )}
           </div>
           <div className="border-t pt-4">
             <h3 className="font-medium mb-2">Cadastrar Novo Plano</h3>
-            <CreatePlanForm />
+            <CreatePlanForm onPlanCreated={refreshData} />
           </div>
         </CardContent>
       </Card>
@@ -198,10 +208,10 @@ export default function AdminClientPage({ users: initialUsers, plans }: AdminCli
                         )}
                     </TableCell>
                     <TableCell>
-                        {user.subscription ? format(parseISO(user.subscription.endDate), 'dd/MM/yyyy') : 'N/A'}
+                        {user.subscription ? format(parseISO(user.subscription.endDate), 'dd/MM/yyyy', { locale: ptBR }) : 'N/A'}
                     </TableCell>
                     <TableCell className="text-right">
-                         {user.role !== 'ADMIN' && <ManageSubscriptionModal user={user} plans={plans} onSubscriptionUpdate={refreshUsers} />}
+                         {user.role !== 'ADMIN' && <ManageSubscriptionModal user={user} plans={plans} onSubscriptionUpdate={refreshData} />}
                     </TableCell>
                     </TableRow>
                 ))}

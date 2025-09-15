@@ -4,37 +4,33 @@ import { useState } from "react";
 import Link from "next/link";
 import { AuthAPI } from "@/lib/endpoints";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 
-export default function LoginPage() {
-  const [form, setForm] = useState({ email: "", password: "" });
+export default function RegisterPage() {
+  const [form, setForm] = useState({ name: "", email: "", password: "" });
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
-  async function handleLogin(e: React.FormEvent) {
+  async function handleRegister(e: React.FormEvent) {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const { data } = await AuthAPI.login(form);
-      if (data.token) {
-        localStorage.setItem("token", data.token);
-        window.location.href = "/produtos"; // Redirect to a protected page
-      } else {
-        throw new Error("Token não recebido do servidor.");
-      }
+      await AuthAPI.register(form);
+      toast({
+        title: "Registro bem-sucedido!",
+        description: "Você agora pode fazer o login.",
+      });
+      // Redirect to login page after a short delay
+      setTimeout(() => {
+        window.location.href = "/login";
+      }, 1000);
     } catch (error: any) {
       toast({
-        title: "Erro no Login",
-        description: error.response?.data?.message || "Credenciais inválidas. Tente novamente.",
+        title: "Erro no Registro",
+        description: error.response?.data?.message || "Ocorreu um erro. Tente novamente.",
         variant: "destructive",
       });
       setIsLoading(false);
@@ -50,13 +46,25 @@ export default function LoginPage() {
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
       <Card className="w-full max-w-sm mx-4">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">Bem-vindo ao SIGEF</CardTitle>
+          <CardTitle className="text-2xl font-bold">Criar Conta</CardTitle>
           <CardDescription>
-            Acesse sua conta para gerenciar suas finanças.
+            Crie uma nova conta para começar a usar o SIGEF.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleLogin} className="space-y-4">
+          <form onSubmit={handleRegister} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Nome</Label>
+              <Input
+                id="name"
+                name="name"
+                type="text"
+                value={form.name}
+                onChange={handleInputChange}
+                required
+                placeholder="Seu nome completo"
+              />
+            </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -82,13 +90,13 @@ export default function LoginPage() {
               />
             </div>
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Entrando..." : "Entrar"}
+              {isLoading ? "Registrando..." : "Registrar"}
             </Button>
           </form>
           <div className="mt-4 text-center text-sm">
-            Não tem uma conta?{" "}
-            <Link href="/register" className="underline">
-              Registre-se
+            Já tem uma conta?{" "}
+            <Link href="/login" className="underline">
+              Faça login
             </Link>
           </div>
         </CardContent>

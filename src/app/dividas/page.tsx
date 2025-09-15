@@ -5,16 +5,17 @@ import React, { useState, useEffect } from 'react';
 import { useStore } from '@/store/store';
 import type { Debt } from '@/types';
 import { Button } from '@/components/ui/button';
-import { PlusCircle } from 'lucide-react';
+import { PlusCircle, Loader2, AlertTriangle } from 'lucide-react';
 import DebtForm from '@/components/debt/debt-form';
 import DebtList from '@/components/debt/debt-list';
 import DebtDetailsModal from '@/components/debt/debt-details-modal';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useAuth } from '@/hooks/useAuth';
 
 export default function DividasPage() {
-  const { debts, addDebt, updateDebt, deleteDebt, getDebtById } = useStore();
-  const [isMounted, setIsMounted] = useState(false);
+  const { token, isAuthenticating } = useAuth();
+  const { debts, addDebt, updateDebt, deleteDebt, getDebtById, isLoading, error, initializeData } = useStore();
   const [isFormVisible, setIsFormVisible] = useState(false);
   const [editingDebt, setEditingDebt] = useState<Debt | null>(null);
   const [viewingDebt, setViewingDebt] = useState<Debt | null>(null);
@@ -22,10 +23,12 @@ export default function DividasPage() {
   const { toast } = useToast();
 
   useEffect(() => {
-    setIsMounted(true);
-  }, []);
+    if (token) {
+      initializeData();
+    }
+  }, [token, initializeData]);
 
-  const handleFormSubmit = (data: Omit<Debt, 'id' | 'createdAt' | 'status' | 'amountPaid'> & { 
+  const handleFormSubmit = async (data: Omit<Debt, 'id' | 'createdAt' | 'status' | 'amountPaid'> & { 
     amountPaid?: number; 
     status?: Debt['status'] 
   }) => {
@@ -35,7 +38,7 @@ export default function DividasPage() {
           ...data,
           amountPaid: data.amountPaid ?? editingDebt.amountPaid,
         };
-        updateDebt(editingDebt.id, updates);
+        await updateDebt(editingDebt.id, updates);
         toast({
           title: "Dívida Atualizada",
           description: `Registro de "${data.description}" atualizado.`,
@@ -43,7 +46,7 @@ export default function DividasPage() {
         setEditingDebt(null);
         setIsFormVisible(false);
       } else {
-        addDebt(data);
+        await addDebt(data);
         toast({
           title: "Dívida Adicionada",
           description: `Registro de "${data.description}" adicionado com sucesso.`,
@@ -68,10 +71,10 @@ export default function DividasPage() {
     }
   };
 
-  const handleDelete = (debtId: string) => {
+  const handleDelete = async (debtId: string) => {
     try {
       const debtToDelete = getDebtById(debtId);
-      deleteDebt(debtId);
+      await deleteDebt(debtId);
       toast({
         title: "Dívida Excluída",
         description: `Registro "${debtToDelete?.description}" excluído.`,
@@ -110,7 +113,25 @@ export default function DividasPage() {
   const receivables = debts.filter(d => d.type === 'receivable');
   const payables = debts.filter(d => d.type === 'payable');
 
-  if (!isMounted) return null;
+  if (isAuthenticating || isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <p className="ml-2 text-muted-foreground">Carregando dados...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] text-destructive">
+        <AlertTriangle className="h-8 w-8 mb-2" />
+        <p className="text-lg font-semibold">Erro ao carregar dados</p>
+        <p className="text-sm text-muted-foreground">{error}</p>
+        <Button onClick={() => initializeData()} className="mt-4">Tentar Novamente</Button>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto p-4 space-y-8">

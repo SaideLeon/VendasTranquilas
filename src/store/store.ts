@@ -1,81 +1,57 @@
 import { create } from 'zustand';
-
-interface CheckDbConnectionResponse {
-    isConnected: boolean;
-}
 import { persist, createJSONStorage } from 'zustand/middleware';
 import type { Product, Sale, ReportData, Debt } from '@/types';
-import { calculateUnitCost } from '@/types'; // Assuming this helper stays in types
-import { v4 as uuidv4 } from 'uuid';
+import { calculateUnitCost } from '@/types';
 import { DEFAULT_CURRENCY_CODE } from '@/config/currencies';
-import {
-  getInitialData,
-  getProducts as dbGetProducts,
-  addProduct as dbAddProduct,
-  updateProduct as dbUpdateProduct,
-  deleteProduct as dbDeleteProduct,
-  getSales as dbGetSales,
-  addSale as dbAddSale,
-  deleteSale as dbDeleteSale,
-  getDebts as dbGetDebts,
-  addDebt as dbAddDebt,
-  updateDebt as dbUpdateDebt,
-  deleteDebt as dbDeleteDebt,
-} from '@/app/actions'; // Import DB actions
+import { ProductAPI, SaleAPI, DebtAPI } from '@/lib/endpoints';
 
 interface AppState {
   products: Product[];
   sales: Sale[];
-  debts: Debt[]; // Added debts state
+  debts: Debt[];
   lastSync: Date | null;
   isOnline: boolean;
-  currency: string; // ISO 4217 currency code
-  isDatabaseConnected: boolean; // Database connection status
-  isLoading: boolean; // Loading state for async operations
-  error: string | null; // To store potential errors
+  currency: string;
+  isLoading: boolean;
+  error: string | null;
 
   // Core actions
-  initializeData: () => Promise<void>; // Fetch initial data from DB
-  setIsDatabaseConnected: (status: boolean) => void;
+  initializeData: () => Promise<void>;
   setIsOnline: (status: boolean) => void;
   setCurrency: (currencyCode: string) => void;
   setError: (error: string | null) => void;
 
   // Product actions
   addProduct: (productData: Omit<Product, 'id' | 'createdAt' | 'userId' | 'user'>) => Promise<Product | null>;
-  updateProduct: (product: Product) => Promise<Product | null>;
+  updateProduct: (productId: string, productData: Partial<Product>) => Promise<Product | null>;
   deleteProduct: (productId: string) => Promise<void>;
-  getProductById: (productId: string) => Product | undefined; // Make sync
+  getProductById: (productId: string) => Product | undefined;
 
   // Sale actions
   addSale: (saleData: Omit<Sale, 'id' | 'profit' | 'productName' | 'createdAt' | 'userId' | 'user'>) => Promise<Sale | null>;
   deleteSale: (saleId: string) => Promise<void>;
-  getSaleById: (saleId: string) => Sale | undefined; // Make sync
+  getSaleById: (saleId: string) => Sale | undefined;
 
   // Debt actions
   addDebt: (debtData: Omit<Debt, 'id' | 'createdAt' | 'status' | 'amountPaid' | 'userId' | 'user'>) => Promise<Debt | null>;
   updateDebt: (debtId: string, updates: Partial<Omit<Debt, 'id' | 'createdAt' | 'userId' | 'user'>>) => Promise<Debt | null>;
   deleteDebt: (debtId: string) => Promise<void>;
-  getDebtById: (debtId: string) => Debt | undefined; // Make sync
+  getDebtById: (debtId: string) => Debt | undefined;
 
   // Reporting
   getSalesReportData: () => ReportData;
 
-  // Store hydration/backup helpers (might not be needed with DB)
+  // Store hydration/backup helpers
   setProducts: (products: Product[]) => void;
   setSales: (sales: Sale[]) => void;
   setDebts: (debts: Debt[]) => void;
   setLastSync: (date: Date | null) => void;
 
-  // Sync function (placeholder or could trigger background tasks)
+  // Sync function
   syncData: () => Promise<void>;
-
-  // DB Connection Check
-  checkDatabaseConnection: () => Promise<void>; // Keep this separate
 }
 
-
-// Helper function to calculate reports
+// Helper function to calculate reports (remains client-side)
 const calculateReports = (products: Product[], sales: Sale[], debts: Debt[]): ReportData => {
     const totalInvestment = products.reduce((total, product) => {
         const { cost: unitCost } = calculateUnitCost(product);
@@ -158,7 +134,6 @@ const calculateReports = (products: Product[], sales: Sale[], debts: Debt[]): Re
     };
 };
 
-
 export const useStore = create<AppState>()(
     persist(
         (set, get) => ({
@@ -168,20 +143,17 @@ export const useStore = create<AppState>()(
             lastSync: null,
             isOnline: typeof navigator !== 'undefined' ? navigator.onLine : true,
             currency: DEFAULT_CURRENCY_CODE,
-            isDatabaseConnected: false,
-            isLoading: false,
+            isLoading: true, // Start with loading true
             error: null,
 
             setError: (error) => set({ error }),
 
-            setIsDatabaseConnected: (status) => set({ isDatabaseConnected: status }),
-
             setIsOnline: (status) => {
                 set({ isOnline: status });
-                if (status && get().isDatabaseConnected) {
+                if (status) {
                     console.log("Became online. Attempting to sync...");
                     get().syncData().catch(err => console.warn("Background sync failed:", err));
-                } else if (!status) {
+                } else {
                     console.log("Became offline.");
                 }
             },
@@ -189,18 +161,18 @@ export const useStore = create<AppState>()(
             setCurrency: (currencyCode) => set({ currency: currencyCode }),
 
             initializeData: async () => {
-                console.log("Initializing data from database...");
+                console.log("Initializing data from API...");
                 set({ isLoading: true, error: null });
                 try {
-                    await get().checkDatabaseConnection(); // Check connection first
-                    if (!get().isDatabaseConnected) {
-                        throw new Error("Database not connected. Cannot initialize.");
-                    }
-                    const { products, sales, debts } = await getInitialData();
+                    const [productsRes, salesRes, debtsRes] = await Promise.all([
+                        ProductAPI.list(),
+                        SaleAPI.list(),
+                        DebtAPI.list()
+                    ]);
                     set({
-                        products: products || [],
-                        sales: sales || [],
-                        debts: debts || [],
+                        products: productsRes.data || [],
+                        sales: salesRes.data || [],
+                        debts: debtsRes.data || [],
                         isLoading: false,
                         lastSync: new Date(),
                     });
@@ -212,19 +184,12 @@ export const useStore = create<AppState>()(
             },
 
             addProduct: async (productData) => {
-                 if (!get().isDatabaseConnected) {
-                    set({ error: "Database not connected. Cannot add product." });
-                    return null;
-                 }
                 set({ isLoading: true, error: null });
                 try {
-                    const savedProduct = await dbAddProduct(productData);
-
-                    if (!savedProduct) throw new Error("Failed to save product to database.");
-
-                     await get().initializeData();
-                     set({ isLoading: false });
-                    return savedProduct;
+                    const response = await ProductAPI.create(productData);
+                    await get().initializeData(); // Refresh data
+                    set({ isLoading: false });
+                    return response.data;
                 } catch (error: any) {
                     console.error("Failed to add product:", error);
                      set({ isLoading: false, error: `Failed to add product: ${error.message}` });
@@ -232,19 +197,13 @@ export const useStore = create<AppState>()(
                 }
             },
 
-            updateProduct: async (product) => {
-                 if (!get().isDatabaseConnected) {
-                     set({ error: "Database not connected. Cannot update product." });
-                     return null;
-                 }
+            updateProduct: async (productId, productData) => {
                 set({ isLoading: true, error: null });
                 try {
-                    const updatedProduct = await dbUpdateProduct(product);
-                    if (!updatedProduct) throw new Error("Failed to update product in database.");
-
-                    await get().initializeData();
-                     set({ isLoading: false });
-                    return updatedProduct;
+                    const response = await ProductAPI.update(productId, productData);
+                    await get().initializeData(); // Refresh data
+                    set({ isLoading: false });
+                    return response.data;
                 } catch (error: any) {
                     console.error("Failed to update product:", error);
                      set({ isLoading: false, error: `Failed to update product: ${error.message}` });
@@ -253,15 +212,10 @@ export const useStore = create<AppState>()(
             },
 
             deleteProduct: async (productId) => {
-                 if (!get().isDatabaseConnected) {
-                     set({ error: "Database not connected. Cannot delete product." });
-                     return;
-                 }
                 set({ isLoading: true, error: null });
                 try {
-                    await dbDeleteProduct(productId);
-
-                    await get().initializeData();
+                    await ProductAPI.remove(productId);
+                    await get().initializeData(); // Refresh data
                     set({ isLoading: false });
                 } catch (error: any) {
                     console.error("Failed to delete product:", error);
@@ -273,12 +227,7 @@ export const useStore = create<AppState>()(
              getSaleById: (saleId) => get().sales.find(s => s.id === saleId),
              getDebtById: (debtId) => get().debts.find(d => d.id === debtId),
 
-
             addSale: async (saleData) => {
-                 if (!get().isDatabaseConnected) {
-                     set({ error: "Database not connected. Cannot add sale." });
-                     return null;
-                 }
                 const product = get().getProductById(saleData.productId);
                 if (!product) {
                     set({ error: "Product not found for sale." });
@@ -291,13 +240,10 @@ export const useStore = create<AppState>()(
 
                 set({ isLoading: true, error: null });
                 try {
-                    const savedSale = await dbAddSale(saleData);
-
-                    if (!savedSale) throw new Error("Failed to save sale to database.");
-
-                    await get().initializeData();
-                     set({ isLoading: false });
-                    return savedSale;
+                    const response = await SaleAPI.create(saleData);
+                    await get().initializeData(); // Refresh data
+                    set({ isLoading: false });
+                    return response.data;
                 } catch (error: any) {
                     console.error("Failed to add sale:", error);
                      set({ isLoading: false, error: `Failed to add sale: ${error.message}` });
@@ -306,20 +252,10 @@ export const useStore = create<AppState>()(
             },
 
             deleteSale: async (saleId) => {
-                 if (!get().isDatabaseConnected) {
-                     set({ error: "Database not connected. Cannot delete sale." });
-                     return;
-                 }
                 set({ isLoading: true, error: null });
-                 const saleToDelete = get().getSaleById(saleId);
-                 if (!saleToDelete) {
-                     set({ isLoading: false, error: "Sale not found." });
-                     return;
-                 }
                 try {
-                    await dbDeleteSale(saleId);
-
-                    await get().initializeData();
+                    await SaleAPI.remove(saleId);
+                    await get().initializeData(); // Refresh data
                     set({ isLoading: false });
                 } catch (error: any) {
                     console.error("Failed to delete sale:", error);
@@ -328,18 +264,12 @@ export const useStore = create<AppState>()(
             },
 
             addDebt: async (debtData) => {
-                 if (!get().isDatabaseConnected) {
-                     set({ error: "Database not connected. Cannot add debt." });
-                     return null;
-                 }
                 set({ isLoading: true, error: null });
                 try {
-                    const savedDebt = await dbAddDebt(debtData);
-                    if (!savedDebt) throw new Error("Failed to save debt to database.");
-
-                    await get().initializeData();
+                    const response = await DebtAPI.create(debtData);
+                    await get().initializeData(); // Refresh data
                     set({ isLoading: false });
-                    return savedDebt;
+                    return response.data;
                 } catch (error: any) {
                     console.error("Failed to add debt:", error);
                      set({ isLoading: false, error: `Failed to add debt: ${error.message}` });
@@ -348,10 +278,6 @@ export const useStore = create<AppState>()(
             },
 
             updateDebt: async (debtId, updates) => {
-                 if (!get().isDatabaseConnected) {
-                    set({ error: "Database not connected. Cannot update debt." });
-                     return null;
-                 }
                  const existingDebt = get().getDebtById(debtId);
                  if (!existingDebt) {
                      set({ error: "Debt not found." });
@@ -376,13 +302,10 @@ export const useStore = create<AppState>()(
                          }
                      }
 
-
-                    const updatedDebt = await dbUpdateDebt(debtId, finalUpdates);
-                    if (!updatedDebt) throw new Error("Failed to update debt in database.");
-
-                    await get().initializeData();
+                    const response = await DebtAPI.update(debtId, finalUpdates);
+                    await get().initializeData(); // Refresh data
                     set({ isLoading: false });
-                    return updatedDebt;
+                    return response.data;
                 } catch (error: any) {
                     console.error("Failed to update debt:", error);
                      set({ isLoading: false, error: `Failed to update debt: ${error.message}` });
@@ -391,14 +314,10 @@ export const useStore = create<AppState>()(
             },
 
             deleteDebt: async (debtId) => {
-                 if (!get().isDatabaseConnected) {
-                     set({ error: "Database not connected. Cannot delete debt." });
-                     return;
-                 }
                 set({ isLoading: true, error: null });
                 try {
-                    await dbDeleteDebt(debtId);
-                    await get().initializeData();
+                    await DebtAPI.remove(debtId);
+                    await get().initializeData(); // Refresh data
                     set({ isLoading: false });
                 } catch (error: any) {
                     console.error("Failed to delete debt:", error);
@@ -417,90 +336,32 @@ export const useStore = create<AppState>()(
             setLastSync: (date) => set({ lastSync: date }),
 
             syncData: async () => {
-                if (!get().isOnline || !get().isDatabaseConnected) {
-                    console.log("Sync skipped: Offline or DB not connected.");
+                if (!get().isOnline) {
+                    console.log("Sync skipped: Offline.");
                     return;
                 }
-                console.log("Simulating background data sync/check...");
-                set({ lastSync: new Date() });
+                console.log("Checking for new data from server...");
+                await get().initializeData();
             },
-
-             checkDatabaseConnection: async () => {
-                 try {
-                     const response = await fetch('/check-db', {
-                         method: 'POST',
-                         headers: {
-                             'Content-Type': 'application/json',
-                         },
-                         body: JSON.stringify({}),
-                     });
-
-                     const data: CheckDbConnectionResponse = await response.json();
-                     const isConnected = data.isConnected;
-
-                     set({ isDatabaseConnected: isConnected });
-                      if (!isConnected) {
-                          set({ error: "Database connection failed." });
-                      } else {
-                           if (get().error === "Database connection failed.") {
-                               set({ error: null });
-                           }
-                      }
-                 } catch (error: any) {
-                     console.error("Database connection check failed:", error);
-                     set({ isDatabaseConnected: false, error: `Database connection check failed: ${error.message}` });
-                 }
-             },
-
         }),
         {
-            name: 'vendas-tranquilas-storage',
+            name: 'sigef-storage', // Renamed storage key
             storage: createJSONStorage(() => localStorage),
             partialize: (state) => ({
-                lastSync: state.lastSync,
                 currency: state.currency,
             }),
-             onRehydrateStorage: (state) => {
-                console.log("Attempting to rehydrate state...");
+             onRehydrateStorage: () => {
                  return (rehydratedState, error) => {
                      if (error) {
                          console.error("Failed to rehydrate state from storage:", error);
-                     } else if (rehydratedState) {
-                        console.log("Rehydration successful (from localStorage).");
-                         if (!rehydratedState.currency) {
-                             rehydratedState.currency = DEFAULT_CURRENCY_CODE;
-                         }
-                         rehydratedState.isOnline = typeof navigator !== 'undefined' ? navigator.onLine : true;
-                         setTimeout(() => {
-                            console.log("Checking DB connection and initializing data post-rehydration...");
-                            useStore.getState().checkDatabaseConnection().then(() => {
-                                if(useStore.getState().isDatabaseConnected) {
-                                    useStore.getState().initializeData();
-                                } else {
-                                    console.warn("Database not connected after rehydration, skipping initial data load from DB.");
-                                }
-                            });
-                         }, 0);
-                     } else {
-                         console.log("No state found in storage for rehydration.");
-                          setTimeout(() => {
-                              console.log("No stored state, checking DB connection and initializing data...");
-                              useStore.getState().checkDatabaseConnection().then(() => {
-                                  if (useStore.getState().isDatabaseConnected) {
-                                      useStore.getState().initializeData();
-                                  } else {
-                                       console.warn("Database not connected, cannot initialize data.");
-                                  }
-                              });
-                          }, 0);
-
                      }
+                     // The initializeData will be called from a component that uses authentication
+                     // to ensure token is available.
                  }
              },
         }
     )
 );
-
 
 if (typeof window !== 'undefined') {
     const updateOnlineStatus = () => {
@@ -510,5 +371,3 @@ if (typeof window !== 'undefined') {
     window.addEventListener('online', updateOnlineStatus);
     window.addEventListener('offline', updateOnlineStatus);
 }
-
-export { uuidv4 };

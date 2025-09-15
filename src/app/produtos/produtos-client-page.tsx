@@ -10,9 +10,11 @@ import type { Product } from '@/types';
 import { useToast } from "@/hooks/use-toast";
 import { Button } from '@/components/ui/button';
 import { PlusCircle, Loader2, AlertTriangle } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
 
-export default function ProdutosClientPage({ initialData }: { initialData: { products: Product[] } }) {
-  const { products, addProduct, updateProduct, deleteProduct, isLoading, error, setProducts, initializeData } = useStore();
+export default function ProdutosClientPage() {
+  const { token, isAuthenticating } = useAuth();
+  const { products, addProduct, updateProduct, deleteProduct, isLoading, error, initializeData } = useStore();
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [viewingProduct, setViewingProduct] = useState<Product | null>(null);
   const [isFormVisible, setIsFormVisible] = useState(false);
@@ -20,13 +22,15 @@ export default function ProdutosClientPage({ initialData }: { initialData: { pro
   const { toast } = useToast();
 
   useEffect(() => {
-    setProducts(initialData.products);
-  }, [initialData, setProducts]);
+    if (token) {
+      initializeData();
+    }
+  }, [token, initializeData]);
 
   const handleFormSubmit = async (data: Omit<Product, 'id' | 'createdAt' | 'userId' | 'user'> & { initialQuantity?: number }) => {
     try {
       if (editingProduct) {
-        await updateProduct({ ...editingProduct, ...data });
+        await updateProduct(editingProduct.id, { ...editingProduct, ...data });
         toast({
           title: "Produto Atualizado",
           description: `"${data.name}" foi atualizado com sucesso.`,
@@ -66,8 +70,8 @@ export default function ProdutosClientPage({ initialData }: { initialData: { pro
       const productToDelete = products.find(p => p.id === productId);
       await deleteProduct(productId);
       toast({
-        title: "Produto ExcluÃdo",
-        description: `"${productToDelete?.name}" foi excluÃdo com sucesso.`,
+        title: "Produto Excluído",
+        description: `"${productToDelete?.name}" foi excluído com sucesso.`,
         variant: "destructive"
       });
       if (editingProduct?.id === productId) {
@@ -82,7 +86,7 @@ export default function ProdutosClientPage({ initialData }: { initialData: { pro
       console.error("Error deleting product:", error);
       toast({
         title: "Erro ao Excluir",
-        description: "NÃ£o foi possÃvel excluir o produto.",
+        description: "Não foi possível excluir o produto.",
         variant: "destructive",
       });
     }
@@ -100,11 +104,11 @@ export default function ProdutosClientPage({ initialData }: { initialData: { pro
        setIsFormVisible(!isFormVisible);
    };
 
-  if (isLoading) {
+  if (isAuthenticating || isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        <p className="ml-2 text-muted-foreground">Carregando produtos...</p>
+        <p className="ml-2 text-muted-foreground">Carregando dados...</p>
       </div>
     );
   }
@@ -113,7 +117,7 @@ export default function ProdutosClientPage({ initialData }: { initialData: { pro
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px] text-destructive">
         <AlertTriangle className="h-8 w-8 mb-2" />
-        <p className="text-lg font-semibold">Erro ao carregar produtos</p>
+        <p className="text-lg font-semibold">Erro ao carregar dados</p>
         <p className="text-sm text-muted-foreground">{error}</p>
         <Button onClick={() => initializeData()} className="mt-4">Tentar Novamente</Button>
       </div>
@@ -137,7 +141,7 @@ export default function ProdutosClientPage({ initialData }: { initialData: { pro
            />
        </div>
 
-      {products.length === 0 ? (
+      {products.length === 0 && !isLoading ? (
         <div className="text-center text-muted-foreground p-8 border rounded-md bg-card min-h-[200px] flex items-center justify-center">
           <p>Nenhum produto cadastrado.</p>
         </div>
