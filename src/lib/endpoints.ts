@@ -9,7 +9,6 @@ export const AuthAPI = {
     api.post("/auth/register", data),
   login: (data: { email: string; password: string }) =>
     api.post("/auth/login", data),
-  me: () => api.get("/auth/me"),
 };
 
 export const ProductAPI = {

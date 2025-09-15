@@ -31,35 +31,15 @@ import { handleExport, handleImport } from '@/lib/data-utils';
 import { useToast } from "@/hooks/use-toast";
 import React, { useRef, useState, useEffect } from "react";
 import { SUPPORTED_CURRENCIES, getCurrencyConfig } from "@/config/currencies";
-import { AuthAPI } from '@/lib/endpoints';
-
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-}
+import { useAuth } from '@/hooks/useAuth';
 
 export default function AppHeader() {
+  const { user } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
   const { isOnline, syncData, lastSync, setProducts, setSales, setDebts, setLastSync, currency, setCurrency } = useStore();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [user, setUser] = useState<User | null>(null);
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const { data } = await AuthAPI.me();
-        setUser(data);
-      } catch (error) {
-        // Not authenticated or error, user will be null
-        console.error("Failed to fetch user", error);
-      }
-    };
-    fetchUser();
-  }, []);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
