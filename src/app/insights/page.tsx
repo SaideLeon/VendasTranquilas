@@ -199,7 +199,7 @@ export default function InsightsPage() {
                         </div>
                         <div>
                           <p className="text-xs text-muted-foreground">Passivos (Dívidas)</p>
-                          <p className="font-semibold text-red-600">{formatValue(analysisResult.balanceSheetSummary.approxLiabilities)}</p>
+                          <p className="font-semibold text-red-600">{formatValue(analysisResult.debtAnalysis.totalPayablesPending)}</p>
                         </div>
                         <div>
                           <p className="text-xs text-muted-foreground">Perdas Totais</p>

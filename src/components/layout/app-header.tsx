@@ -27,6 +27,7 @@ import {
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
 } from '@/components/ui/dropdown-menu';
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { handleExport, handleImport } from '@/lib/data-utils';
 import { useToast } from "@/hooks/use-toast";
 import React, { useRef, useState, useEffect } from "react";
@@ -127,15 +128,18 @@ export default function AppHeader() {
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
-          <Tabs value={getActiveTab()} className="hidden md:block">
-            <TabsList>
-              <TabsTrigger value="produtos" asChild><Link href="/produtos"><Package className="mr-2 h-4 w-4" /> Produtos</Link></TabsTrigger>
-              <TabsTrigger value="vendas" asChild><Link href="/vendas"><ShoppingCart className="mr-2 h-4 w-4" /> Vendas</Link></TabsTrigger>
-              <TabsTrigger value="dividas" asChild><Link href="/dividas"><HandCoins className="mr-2 h-4 w-4" /> Dívidas</Link></TabsTrigger>
-              <TabsTrigger value="relatorios" asChild><Link href="/relatorios"><BarChart3 className="mr-2 h-4 w-4" /> Relatórios</Link></TabsTrigger>
-              <TabsTrigger value="insights" asChild><Link href="/insights"><BrainCircuit className="mr-2 h-4 w-4" /> Insights AI</Link></TabsTrigger>
-            </TabsList>
-          </Tabs>
+          <ScrollArea className="hidden md:block whitespace-nowrap">
+            <Tabs value={getActiveTab()}>
+              <TabsList>
+                <TabsTrigger value="produtos" asChild><Link href="/produtos"><Package className="mr-2 h-4 w-4" /> Produtos</Link></TabsTrigger>
+                <TabsTrigger value="vendas" asChild><Link href="/vendas"><ShoppingCart className="mr-2 h-4 w-4" /> Vendas</Link></TabsTrigger>
+                <TabsTrigger value="dividas" asChild><Link href="/dividas"><HandCoins className="mr-2 h-4 w-4" /> Dívidas</Link></TabsTrigger>
+                <TabsTrigger value="relatorios" asChild><Link href="/relatorios"><BarChart3 className="mr-2 h-4 w-4" /> Relatórios</Link></TabsTrigger>
+                <TabsTrigger value="insights" asChild><Link href="/insights"><BrainCircuit className="mr-2 h-4 w-4" /> Insights AI</Link></TabsTrigger>
+              </TabsList>
+            </Tabs>
+            <ScrollBar orientation="horizontal" />
+          </ScrollArea>
         </div>
 
         <div className="flex items-center gap-2 md:gap-3">
