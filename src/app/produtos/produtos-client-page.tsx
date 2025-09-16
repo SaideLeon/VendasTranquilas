@@ -51,9 +51,10 @@ export default function ProdutosClientPage() {
       }
     } catch (error) {
       console.error("Error saving product:", error);
+      const errorMessage = error instanceof Error ? error.message : "Não foi possível salvar o produto.";
       toast({
         title: "Erro ao Salvar",
-        description: "Não foi possível salvar o produto.",
+        description: errorMessage,
         variant: "destructive",
       });
     }
@@ -84,9 +85,10 @@ export default function ProdutosClientPage() {
        }
     } catch (error) {
       console.error("Error deleting product:", error);
+      const errorMessage = error instanceof Error ? error.message : "Não foi possível excluir o produto.";
       toast({
         title: "Erro ao Excluir",
-        description: "Não foi possível excluir o produto.",
+        description: errorMessage,
         variant: "destructive",
       });
     }

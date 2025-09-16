@@ -45,9 +45,10 @@ export default function VendasPage() {
       }
     } catch (error) {
       console.error("Error adding sale:", error);
+      const errorMessage = error instanceof Error ? error.message : "Ocorreu um erro inesperado.";
       toast({
         title: "Erro ao Registrar",
-        description: "Ocorreu um erro inesperado.",
+        description: errorMessage,
         variant: "destructive",
       });
       return false;
@@ -69,9 +70,10 @@ export default function VendasPage() {
       }
     } catch (error) {
       console.error("Error deleting sale:", error);
+      const errorMessage = error instanceof Error ? error.message : "Não foi possível excluir o registro.";
       toast({
         title: "Erro ao Excluir",
-        description: "Não foi possível excluir o registro.",
+        description: errorMessage,
         variant: "destructive",
       });
     }

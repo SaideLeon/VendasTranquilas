@@ -55,9 +55,10 @@ export default function DividasPage() {
       }
     } catch (error) {
       console.error("Error saving debt:", error);
+      const errorMessage = error instanceof Error ? error.message : "Não foi possível salvar o registro de dívida.";
       toast({
         title: "Erro ao Salvar",
-        description: "Não foi possível salvar o registro de dívida.",
+        description: errorMessage,
         variant: "destructive",
       });
     }
@@ -90,9 +91,10 @@ export default function DividasPage() {
       }
     } catch (error) {
       console.error("Error deleting debt:", error);
+      const errorMessage = error instanceof Error ? error.message : "Não foi possível excluir o registro.";
       toast({
         title: "Erro ao Excluir",
-        description: "Não foi possível excluir o registro.",
+        description: errorMessage,
         variant: "destructive",
       });
     }
