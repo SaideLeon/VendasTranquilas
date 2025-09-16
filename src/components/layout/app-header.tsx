@@ -240,16 +240,19 @@ export default function AppHeader() {
         </div>
       </div>
       <div className="md:hidden border-t">
-         <Tabs value={getActiveTab()} className="w-full p-1">
-            <TabsList className="grid w-full grid-cols-6 h-12">
-              <TabsTrigger value="produtos" asChild className="h-full"><Link href="/produtos" className="flex flex-col items-center justify-center text-xs gap-1"><Package className="h-4 w-4" /> Produtos</Link></TabsTrigger>
-              <TabsTrigger value="vendas" asChild className="h-full"><Link href="/vendas" className="flex flex-col items-center justify-center text-xs gap-1"><ShoppingCart className="h-4 w-4" /> Vendas</Link></TabsTrigger>
-              <TabsTrigger value="dividas" asChild className="h-full"><Link href="/dividas" className="flex flex-col items-center justify-center text-xs gap-1"><HandCoins className="h-4 w-4" /> Dívidas</Link></TabsTrigger>
-              <TabsTrigger value="despesas" asChild className="h-full"><Link href="/despesas/operacionais" className="flex flex-col items-center justify-center text-xs gap-1"><ReceiptText className="h-4 w-4" /> Despesas</Link></TabsTrigger>
-              <TabsTrigger value="relatorios" asChild className="h-full"><Link href="/relatorios" className="flex flex-col items-center justify-center text-xs gap-1"><BarChart3 className="h-4 w-4" /> Relatórios</Link></TabsTrigger>
-              <TabsTrigger value="insights" asChild className="h-full"><Link href="/insights" className="flex flex-col items-center justify-center text-xs gap-1"><BrainCircuit className="h-4 w-4" /> Insights</Link></TabsTrigger>
+        <ScrollArea className="w-full whitespace-nowrap">
+          <Tabs value={getActiveTab()} className="p-1">
+            <TabsList className="h-12">
+              <TabsTrigger value="produtos" asChild className="h-full"><Link href="/produtos" className="flex flex-col items-center justify-center text-xs gap-1 w-20"><Package className="h-4 w-4" /> Produtos</Link></TabsTrigger>
+              <TabsTrigger value="vendas" asChild className="h-full"><Link href="/vendas" className="flex flex-col items-center justify-center text-xs gap-1 w-20"><ShoppingCart className="h-4 w-4" /> Vendas</Link></TabsTrigger>
+              <TabsTrigger value="dividas" asChild className="h-full"><Link href="/dividas" className="flex flex-col items-center justify-center text-xs gap-1 w-20"><HandCoins className="h-4 w-4" /> Dívidas</Link></TabsTrigger>
+              <TabsTrigger value="despesas" asChild className="h-full"><Link href="/despesas/operacionais" className="flex flex-col items-center justify-center text-xs gap-1 w-20"><ReceiptText className="h-4 w-4" /> Despesas</Link></TabsTrigger>
+              <TabsTrigger value="relatorios" asChild className="h-full"><Link href="/relatorios" className="flex flex-col items-center justify-center text-xs gap-1 w-20"><BarChart3 className="h-4 w-4" /> Relatórios</Link></TabsTrigger>
+              <TabsTrigger value="insights" asChild className="h-full"><Link href="/insights" className="flex flex-col items-center justify-center text-xs gap-1 w-20"><BrainCircuit className="h-4 w-4" /> Insights</Link></TabsTrigger>
             </TabsList>
           </Tabs>
+          <ScrollBar orientation="horizontal" />
+        </ScrollArea>
       </div>
     </header>
   );
