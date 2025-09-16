@@ -33,6 +33,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 
 // Define types based on the expected API response
 type UserWithSubscription = {
@@ -186,6 +187,7 @@ export default function AdminClientPage({ users: initialUsers, plans: initialPla
             </CardTitle>
         </CardHeader>
         <CardContent>
+          <ScrollArea className="whitespace-nowrap rounded-md border">
             <Table>
                 <TableHeader>
                 <TableRow>
@@ -234,6 +236,8 @@ export default function AdminClientPage({ users: initialUsers, plans: initialPla
                 ))}
                 </TableBody>
             </Table>
+            <ScrollBar orientation="horizontal" />
+          </ScrollArea>
         </CardContent>
     </Card>
     </div>
