@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"; 
-import { Package, ShoppingCart, BarChart3, Wifi, WifiOff, Cloud, Upload, Download, Landmark, HandCoins, BrainCircuit, Shield, LogOut } from "lucide-react";
+import { Package, ShoppingCart, BarChart3, Wifi, WifiOff, Cloud, Upload, Download, Landmark, HandCoins, BrainCircuit, Shield, LogOut, ReceiptText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useStore } from "@/store/store";
@@ -51,6 +51,7 @@ export default function AppHeader() {
     if (pathname.startsWith("/produtos")) return "produtos";
     if (pathname.startsWith("/vendas")) return "vendas";
     if (pathname.startsWith("/dividas")) return "dividas";
+    if (pathname.startsWith("/despesas")) return "despesas";
     if (pathname.startsWith("/relatorios")) return "relatorios";
     if (pathname.startsWith("/insights")) return "insights";
     return "";
@@ -132,10 +133,9 @@ export default function AppHeader() {
             <Tabs value={getActiveTab()}>
               <TabsList>
                 <TabsTrigger value="produtos" asChild><Link href="/produtos"><Package className="mr-2 h-4 w-4" /> Produtos</Link></TabsTrigger>
-                <TabsTrigger value="despesas" asChild><Link href="/despesas/operacionais"><BrainCircuit className="mr-2 h-4          │
- │          w-4" /> Despesas operacionais</Link></TabsTrigger>
                 <TabsTrigger value="vendas" asChild><Link href="/vendas"><ShoppingCart className="mr-2 h-4 w-4" /> Vendas</Link></TabsTrigger>
                 <TabsTrigger value="dividas" asChild><Link href="/dividas"><HandCoins className="mr-2 h-4 w-4" /> Dívidas</Link></TabsTrigger>
+                <TabsTrigger value="despesas" asChild><Link href="/despesas/operacionais"><ReceiptText className="mr-2 h-4 w-4" /> Despesas operacionais</Link></TabsTrigger>
                 <TabsTrigger value="relatorios" asChild><Link href="/relatorios"><BarChart3 className="mr-2 h-4 w-4" /> Relatórios</Link></TabsTrigger>
                 <TabsTrigger value="insights" asChild><Link href="/insights"><BrainCircuit className="mr-2 h-4 w-4" /> Insights AI</Link></TabsTrigger>
               </TabsList>
@@ -241,10 +241,11 @@ export default function AppHeader() {
       </div>
       <div className="md:hidden border-t">
          <Tabs value={getActiveTab()} className="w-full p-1">
-            <TabsList className="grid w-full grid-cols-5 h-12">
+            <TabsList className="grid w-full grid-cols-6 h-12">
               <TabsTrigger value="produtos" asChild className="h-full"><Link href="/produtos" className="flex flex-col items-center justify-center text-xs gap-1"><Package className="h-4 w-4" /> Produtos</Link></TabsTrigger>
               <TabsTrigger value="vendas" asChild className="h-full"><Link href="/vendas" className="flex flex-col items-center justify-center text-xs gap-1"><ShoppingCart className="h-4 w-4" /> Vendas</Link></TabsTrigger>
               <TabsTrigger value="dividas" asChild className="h-full"><Link href="/dividas" className="flex flex-col items-center justify-center text-xs gap-1"><HandCoins className="h-4 w-4" /> Dívidas</Link></TabsTrigger>
+              <TabsTrigger value="despesas" asChild className="h-full"><Link href="/despesas/operacionais" className="flex flex-col items-center justify-center text-xs gap-1"><ReceiptText className="h-4 w-4" /> Despesas</Link></TabsTrigger>
               <TabsTrigger value="relatorios" asChild className="h-full"><Link href="/relatorios" className="flex flex-col items-center justify-center text-xs gap-1"><BarChart3 className="h-4 w-4" /> Relatórios</Link></TabsTrigger>
               <TabsTrigger value="insights" asChild className="h-full"><Link href="/insights" className="flex flex-col items-center justify-center text-xs gap-1"><BrainCircuit className="h-4 w-4" /> Insights</Link></TabsTrigger>
             </TabsList>
