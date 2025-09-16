@@ -132,6 +132,8 @@ export default function AppHeader() {
             <Tabs value={getActiveTab()}>
               <TabsList>
                 <TabsTrigger value="produtos" asChild><Link href="/produtos"><Package className="mr-2 h-4 w-4" /> Produtos</Link></TabsTrigger>
+                <TabsTrigger value="despesas" asChild><Link href="/despesas/operacionais"><BrainCircuit className="mr-2 h-4          │
+ │          w-4" /> Despesas operacionais</Link></TabsTrigger>
                 <TabsTrigger value="vendas" asChild><Link href="/vendas"><ShoppingCart className="mr-2 h-4 w-4" /> Vendas</Link></TabsTrigger>
                 <TabsTrigger value="dividas" asChild><Link href="/dividas"><HandCoins className="mr-2 h-4 w-4" /> Dívidas</Link></TabsTrigger>
                 <TabsTrigger value="relatorios" asChild><Link href="/relatorios"><BarChart3 className="mr-2 h-4 w-4" /> Relatórios</Link></TabsTrigger>
