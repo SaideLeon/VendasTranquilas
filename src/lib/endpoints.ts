@@ -55,6 +55,6 @@ export const AiAPI = {
 
 export const ChatAPI = {
   sendMessage: (message: string, conversationId?: string) =>
-    api.post('https://sigef.cognick.qzz.io/api/chat', { message, conversationId }),
-  refreshData: () => api.put('https://sigef.cognick.qzz.io/api/chat/refresh'),
+    api.post('/chat', { message, conversationId }),
+  refreshData: () => api.put('/refresh'),
 };
