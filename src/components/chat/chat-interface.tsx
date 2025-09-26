@@ -43,8 +43,13 @@ export default function ChatInterface() {
     setInput('');
     setIsLoading(true);
 
+    console.log('Sending message to backend:', { message: input, conversationId: conversationId ?? undefined });
+
     try {
       const { data } = await ChatAPI.sendMessage(input, conversationId ?? undefined);
+      
+      console.log('Received response from backend:', data);
+
       const aiMessage: Message = {
         sender: 'ai',
         text: data.response,
@@ -53,6 +58,8 @@ export default function ChatInterface() {
       setMessages((prev) => [...prev, aiMessage]);
       setConversationId(data.conversationId);
     } catch (error: any) {
+      console.error('Error response from backend:', error);
+
       const errorMessage = error.response?.data?.message || 'Falha ao comunicar com o assistente.';
       toast({
         title: 'Erro no Chat',
