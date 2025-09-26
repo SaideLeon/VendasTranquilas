@@ -1,4 +1,5 @@
-import React from "react";
+'use client';
+
 import {
   SidebarProvider,
   Sidebar,
@@ -10,17 +11,17 @@ import { Logo } from "@/components/ui/Logo";
 
 export default function DashboardLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode;
-}) {
+}>) {
   return (
     <SidebarProvider>
-      <Sidebar variant="sidebar" collapsible="icon">
+      <Sidebar>
         <SidebarHeader>
           <Logo />
         </SidebarHeader>
         <SidebarContent>
-          {/* The dashboard navigation is now in the main AppHeader */}
+          {/* DashboardNav can be placed here if needed */}
         </SidebarContent>
       </Sidebar>
       <SidebarInset>{children}</SidebarInset>
