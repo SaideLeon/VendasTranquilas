@@ -6,8 +6,7 @@ import {
   SidebarContent,
   SidebarInset,
 } from "@/components/ui/sidebar";
-import { Logo } from "@/components/logo";
-import { DashboardNav } from "@/components/dashboard-nav";
+import { Logo } from "@/components/ui/Logo";
 
 export default function DashboardLayout({
   children,
@@ -21,7 +20,7 @@ export default function DashboardLayout({
           <Logo />
         </SidebarHeader>
         <SidebarContent>
-          <DashboardNav />
+          {/* The dashboard navigation is now in the main AppHeader */}
         </SidebarContent>
       </Sidebar>
       <SidebarInset>{children}</SidebarInset>
