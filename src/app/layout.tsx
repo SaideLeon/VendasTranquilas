@@ -1,15 +1,20 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { Toaster } from "@/components/ui/toaster";
 import { cn } from "@/lib/utils";
+import AppLayout from '@/components/layout/app-layout';
+import ServiceWorkerRegistrar from "@/components/layout/service-worker-registrar";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
 export const metadata: Metadata = {
-  title: "SIGEF - Financial Management",
-  description:
-    "A personal finance application to monitor and organize your finances.",
+  title: "SIGEF - Sistema Intuitivo de Gestão Financeira",
+  description: "Sistema Intuitivo de Gestão Financeira",
+  manifest: "/manifest.json",
+  icons: {
+    icon: '/logo.svg',
+    apple: '/icon-192x192.png',
+  },
 };
 
 export default function RootLayout({
@@ -18,11 +23,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="pt-BR">
       <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+        <meta charSet="UTF-8" />
+        <meta name="theme-color" content="#000000" />
       </head>
       <body
         className={cn(
@@ -30,8 +34,8 @@ export default function RootLayout({
           inter.variable
         )}
       >
-        {children}
-        <Toaster />
+          <ServiceWorkerRegistrar />
+          <AppLayout>{children}</AppLayout>
       </body>
     </html>
   );
