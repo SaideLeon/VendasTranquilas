@@ -142,7 +142,7 @@ export default function ChatInterface() {
       </CardHeader>
 
       <CardContent className="flex-1 overflow-hidden p-0">
-        <ScrollArea className="h-full">
+        <div className="h-full overflow-y-auto scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent hover:scrollbar-thumb-primary/40">
           <div className="p-6 space-y-6">
             {messages.length === 0 && (
               <div className="flex flex-col items-center justify-center h-[400px] text-center">
@@ -233,7 +233,7 @@ export default function ChatInterface() {
             
             <div ref={messagesEndRef} />
           </div>
-        </ScrollArea>
+        </div>
       </CardContent>
 
       <div className="border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
