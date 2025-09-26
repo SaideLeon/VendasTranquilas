@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"; 
-import { Package, ShoppingCart, BarChart3, Wifi, WifiOff, Cloud, Upload, Download, Landmark, HandCoins, BrainCircuit, Shield, LogOut, ReceiptText } from "lucide-react";
+import { Package, ShoppingCart, BarChart3, Wifi, WifiOff, Cloud, Upload, Download, Landmark, HandCoins, BrainCircuit, Shield, LogOut, ReceiptText, Bot } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useStore } from "@/store/store";
@@ -54,6 +54,7 @@ export default function AppHeader() {
     if (pathname.startsWith("/despesas")) return "despesas";
     if (pathname.startsWith("/relatorios")) return "relatorios";
     if (pathname.startsWith("/insights")) return "insights";
+    if (pathname.startsWith("/chat")) return "chat";
     return "";
   };
 
@@ -138,6 +139,7 @@ export default function AppHeader() {
                 <TabsTrigger value="despesas" asChild><Link href="/despesas/operacionais"><ReceiptText className="mr-2 h-4 w-4" /> Despesas operacionais</Link></TabsTrigger>
                 <TabsTrigger value="relatorios" asChild><Link href="/relatorios"><BarChart3 className="mr-2 h-4 w-4" /> Relatórios</Link></TabsTrigger>
                 <TabsTrigger value="insights" asChild><Link href="/insights"><BrainCircuit className="mr-2 h-4 w-4" /> Insights AI</Link></TabsTrigger>
+                <TabsTrigger value="chat" asChild><Link href="/chat"><Bot className="mr-2 h-4 w-4" /> Chat AI</Link></TabsTrigger>
               </TabsList>
             </Tabs>
             <ScrollBar orientation="horizontal" />
@@ -249,6 +251,7 @@ export default function AppHeader() {
               <TabsTrigger value="despesas" asChild className="h-full"><Link href="/despesas/operacionais" className="flex flex-col items-center justify-center text-xs gap-1 w-20"><ReceiptText className="h-4 w-4" /> Despesas</Link></TabsTrigger>
               <TabsTrigger value="relatorios" asChild className="h-full"><Link href="/relatorios" className="flex flex-col items-center justify-center text-xs gap-1 w-20"><BarChart3 className="h-4 w-4" /> Relatórios</Link></TabsTrigger>
               <TabsTrigger value="insights" asChild className="h-full"><Link href="/insights" className="flex flex-col items-center justify-center text-xs gap-1 w-20"><BrainCircuit className="h-4 w-4" /> Insights</Link></TabsTrigger>
+              <TabsTrigger value="chat" asChild className="h-full"><Link href="/chat" className="flex flex-col items-center justify-center text-xs gap-1 w-20"><Bot className="h-4 w-4" /> Chat</Link></TabsTrigger>
             </TabsList>
           </Tabs>
           <ScrollBar orientation="horizontal" />

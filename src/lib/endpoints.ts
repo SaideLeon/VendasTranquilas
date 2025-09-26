@@ -52,3 +52,9 @@ export const AdminAPI = {
 export const AiAPI = {
     analyze: (currencyCode: string) => api.get('/ai/analyze-finances', { params: { currencyCode } })
 };
+
+export const ChatAPI = {
+  sendMessage: (message: string, conversationId?: string) =>
+    api.post('/chat', { message, conversationId }),
+  refreshData: () => api.put('/chat/refresh'),
+};
