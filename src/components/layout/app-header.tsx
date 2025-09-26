@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"; 
-import { Package, ShoppingCart, BarChart3, Wifi, WifiOff, Cloud, Upload, Download, Landmark, HandCoins, BrainCircuit, Shield, LogOut, ReceiptText, Bot } from "lucide-react";
+import { Package, ShoppingCart, BarChart3, Wifi, WifiOff, Cloud, Upload, Download, Landmark, HandCoins, BrainCircuit, Shield, LogOut, ReceiptText, Bot, LayoutDashboard, ArrowLeftRight, PiggyBank, AreaChart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useStore } from "@/store/store";
@@ -48,6 +48,10 @@ export default function AppHeader() {
   };
 
   const getActiveTab = () => {
+    if (pathname.startsWith("/dashboard/transactions")) return "transactions";
+    if (pathname.startsWith("/dashboard/budgets")) return "budgets";
+    if (pathname.startsWith("/dashboard/reports")) return "reports";
+    if (pathname.startsWith("/dashboard")) return "dashboard";
     if (pathname.startsWith("/produtos")) return "produtos";
     if (pathname.startsWith("/vendas")) return "vendas";
     if (pathname.startsWith("/dividas")) return "dividas";
@@ -133,6 +137,10 @@ export default function AppHeader() {
           <ScrollArea className="hidden md:block whitespace-nowrap">
             <Tabs value={getActiveTab()}>
               <TabsList>
+                <TabsTrigger value="dashboard" asChild><Link href="/dashboard"><LayoutDashboard className="mr-2 h-4 w-4" /> Dashboard</Link></TabsTrigger>
+                <TabsTrigger value="transactions" asChild><Link href="/dashboard/transactions"><ArrowLeftRight className="mr-2 h-4 w-4" /> Transações</Link></TabsTrigger>
+                <TabsTrigger value="budgets" asChild><Link href="/dashboard/budgets"><PiggyBank className="mr-2 h-4 w-4" /> Orçamentos</Link></TabsTrigger>
+                <TabsTrigger value="reports" asChild><Link href="/dashboard/reports"><AreaChart className="mr-2 h-4 w-4" /> Relatórios</Link></TabsTrigger>
                 <TabsTrigger value="produtos" asChild><Link href="/produtos"><Package className="mr-2 h-4 w-4" /> Produtos</Link></TabsTrigger>
                 <TabsTrigger value="vendas" asChild><Link href="/vendas"><ShoppingCart className="mr-2 h-4 w-4" /> Vendas</Link></TabsTrigger>
                 <TabsTrigger value="dividas" asChild><Link href="/dividas"><HandCoins className="mr-2 h-4 w-4" /> Dívidas</Link></TabsTrigger>
@@ -245,6 +253,10 @@ export default function AppHeader() {
         <ScrollArea className="w-full whitespace-nowrap">
           <Tabs value={getActiveTab()} className="p-1">
             <TabsList className="h-12">
+              <TabsTrigger value="dashboard" asChild className="h-full"><Link href="/dashboard" className="flex flex-col items-center justify-center text-xs gap-1 w-20"><LayoutDashboard className="h-4 w-4" /> Dashboard</Link></TabsTrigger>
+              <TabsTrigger value="transactions" asChild className="h-full"><Link href="/dashboard/transactions" className="flex flex-col items-center justify-center text-xs gap-1 w-20"><ArrowLeftRight className="h-4 w-4" /> Transações</Link></TabsTrigger>
+              <TabsTrigger value="budgets" asChild className="h-full"><Link href="/dashboard/budgets" className="flex flex-col items-center justify-center text-xs gap-1 w-20"><PiggyBank className="h-4 w-4" /> Orçamentos</Link></TabsTrigger>
+              <TabsTrigger value="reports" asChild className="h-full"><Link href="/dashboard/reports" className="flex flex-col items-center justify-center text-xs gap-1 w-20"><AreaChart className="h-4 w-4" /> Relatórios</Link></TabsTrigger>
               <TabsTrigger value="produtos" asChild className="h-full"><Link href="/produtos" className="flex flex-col items-center justify-center text-xs gap-1 w-20"><Package className="h-4 w-4" /> Produtos</Link></TabsTrigger>
               <TabsTrigger value="vendas" asChild className="h-full"><Link href="/vendas" className="flex flex-col items-center justify-center text-xs gap-1 w-20"><ShoppingCart className="h-4 w-4" /> Vendas</Link></TabsTrigger>
               <TabsTrigger value="dividas" asChild className="h-full"><Link href="/dividas" className="flex flex-col items-center justify-center text-xs gap-1 w-20"><HandCoins className="h-4 w-4" /> Dívidas</Link></TabsTrigger>
