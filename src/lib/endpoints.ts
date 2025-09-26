@@ -56,5 +56,5 @@ export const AiAPI = {
 export const ChatAPI = {
   sendMessage: (message: string, conversationId?: string) =>
     api.post('/chat', { message, conversationId }),
-  refreshData: () => api.put('/refresh'),
+  refreshData: () => api.put('/chat/refresh'),
 };
