@@ -34,12 +34,9 @@ import {
   Lightbulb,
   Scale,
   HandCoins,
-  TrendingDown,
-  TrendingUp,
   CircleCheck,
   CircleAlert,
   CircleX,
-  RefreshCw,
   Package,
   Loader2,
 } from 'lucide-react';
@@ -48,6 +45,7 @@ import { Badge } from '@/components/ui/badge';
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useAuth } from '@/hooks/useAuth';
+import { AxiosError } from 'axios';
 
 type ProductAnalysisDetail = FinancialAnalysisOutput['productAnalysis'][0];
 
@@ -74,10 +72,16 @@ export default function InsightsPage() {
     try {
       const result = await AiAPI.analyze(currency);
       setAnalysisResult(result.data);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Financial analysis process failed:', err);
-      const errorMessage = err.response?.data?.message || err.message || 'Ocorreu um erro durante o processo.';
-      setAnalysisError(errorMessage);
+      if (err instanceof AxiosError && err.response) {
+        const errorMessage = err.response?.data?.message || err.message || 'Ocorreu um erro durante o processo.';
+        setAnalysisError(errorMessage);
+      } else if (err instanceof Error) {
+        setAnalysisError(err.message);
+      } else {
+        setAnalysisError('Ocorreu um erro durante o processo.');
+      }
     } finally {
       setProcessState('idle');
     }
@@ -312,9 +316,4 @@ export default function InsightsPage() {
                 ))}
               </TableBody>
             </Table>
-          </DialogContent>
-        </Dialog>
-      )}
-    </TooltipProvider>
-  );
-}
+          </DialogContent

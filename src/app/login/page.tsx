@@ -14,6 +14,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { AxiosError } from "axios";
 
 export default function LoginPage() {
   const [form, setForm] = useState({ email: "", password: "" });
@@ -31,12 +32,26 @@ export default function LoginPage() {
       } else {
         throw new Error("Token não recebido do servidor.");
       }
-    } catch (error: any) {
-      toast({
-        title: "Erro no Login",
-        description: error.response?.data?.message || "Credenciais inválidas. Tente novamente.",
-        variant: "destructive",
-      });
+    } catch (error: unknown) {
+        if (error instanceof AxiosError && error.response) {
+            toast({
+                title: "Erro no Login",
+                description: error.response?.data?.message || "Credenciais inválidas. Tente novamente.",
+                variant: "destructive",
+            });
+        } else if (error instanceof Error) {
+            toast({
+                title: "Erro no Login",
+                description: error.message,
+                variant: "destructive",
+            });
+        } else {
+            toast({
+                title: "Erro no Login",
+                description: "Ocorreu um erro desconhecido.",
+                variant: "destructive",
+            });
+        }
       setIsLoading(false);
     }
   }
@@ -87,12 +102,4 @@ export default function LoginPage() {
           </form>
           <div className="mt-4 text-center text-sm">
             Não tem uma conta?{" "}
-            <Link href="/register" className="underline">
-              Registre-se
-            </Link>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
+            <Link href="/register" className="

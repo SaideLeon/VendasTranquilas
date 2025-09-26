@@ -20,11 +20,8 @@ export default function BudgetsPage() {
           {budgets.length === 0 && (
             <div className="col-span-full text-center text-muted-foreground py-10">
               <p>Você ainda não criou nenhum orçamento.</p>
-              <p>Clique em "Novo Orçamento" para começar.</p>
+              <p>Clique em &quot;Novo Orçamento&quot; para começar.</p>
             </div>
           )}
         </div>
       </main>
-    </div>
-  );
-}

@@ -3,9 +3,10 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
-import { AuthAPI, AdminAPI } from '@/lib/endpoints';
+import { AdminAPI } from '@/lib/endpoints';
 import AdminClientPage from './admin-client-page';
-import { Loader2, AlertTriangle } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
+import { AxiosError } from 'axios';
 
 // Define types based on what the API returns
 // These might need adjustment based on the actual API response
@@ -56,8 +57,15 @@ export default function AdminPage() {
 
         setUsers(usersResponse.data);
         setPlans(plansResponse.data);
-      } catch (err: any) {
-        setError(err.response?.data?.message || "Falha ao carregar dados do administrador.");
+      } catch (err: unknown) {
+        if (err instanceof AxiosError && err.response) {
+            setError(err.response?.data?.message || "Falha ao carregar dados do administrador.");
+        } else if (err instanceof Error) {
+            setError(err.message)
+        }
+        else {
+            setError("Falha ao carregar dados do administrador.");
+        }
       } finally {
         setIsLoading(false);
       }
@@ -89,5 +97,4 @@ export default function AdminPage() {
   }
 
   // This should ideally not be reached due to redirects, but as a fallback:
-  return null;
-}
+  return null

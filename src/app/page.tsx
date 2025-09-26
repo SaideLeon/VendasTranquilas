@@ -3,6 +3,7 @@
 import React, { useEffect } from 'react';
 import Link from 'next/link';
 import Head from 'next/head';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';
 import { Menu } from 'lucide-react';    
@@ -412,37 +413,71 @@ export default function HomePage() {
                             <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/>
                             </svg>
+                            <span>Até 100 transações/mês</span>
+                        </li>
+                        <li className="flex items-center space-x-3">
+                            <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/>
+                            </svg>
                             <span>Relatórios básicos</span>
                         </li>
                         <li className="flex items-center space-x-3">
-                            <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/>
+                            <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/>
                             </svg>
-                            <span>Controle de vendas</span>
-                        </li>
-                        <li className="flex items-center space-x-3">
-                            <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/>
-                            </svg>
-                            <span>Suporte por email</span>
+                            <span>Análise com IA</span>
                         </li>
                     </ul>
-                    <Link href="/login" className="w-full block text-center bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold py-3 rounded-lg transition duration-300">
+                     <Link href="/register" className="w-full text-center block bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-3 rounded-lg transition duration-300">
                         Começar Grátis
                     </Link>
                 </div>
                 
                 {/* Pro Plan */}
-                <div className="bg-white rounded-2xl shadow-xl border-2 border-teal-500 p-8 relative transform scale-105">
-                    <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                        <span className="bg-teal-500 text-white px-4 py-1 rounded-full text-sm font-medium">
-                            Mais Popular
-                        </span>
-                    </div>
+                <div className="bg-gradient-to-br from-teal-500 to-teal-600 rounded-2xl shadow-2xl border border-teal-700 p-8 relative transform scale-105">
+                    <div className="absolute top-0 right-0 -mt-3 mr-3 bg-yellow-400 text-gray-900 font-bold text-sm py-1 px-3 rounded-full">MAIS POPULAR</div>
                     <div className="text-center mb-8">
-                        <h3 className="text-2xl font-bold text-gray-900 mb-2">Profissional</h3>
-                        <div className="text-4xl font-bold text-gray-900 mb-1">200 MT</div>
-                        <div className="text-gray-600">/mês</div>
+                        <h3 className="text-2xl font-bold text-white mb-2">Profissional</h3>
+                        <div className="text-4xl font-bold text-white mb-1">450,00 MT</div>
+                        <div className="text-teal-100">Por mês</div>
+                    </div>
+                    <ul className="space-y-4 mb-8 text-white">
+                        <li className="flex items-center space-x-3">
+                            <svg className="w-5 h-5 text-yellow-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/>
+                            </svg>
+                            <span>Até 500 produtos</span>
+                        </li>
+                        <li className="flex items-center space-x-3">
+                            <svg className="w-5 h-5 text-yellow-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/>
+                            </svg>
+                            <span>Transações ilimitadas</span>
+                        </li>
+                        <li className="flex items-center space-x-3">
+                            <svg className="w-5 h-5 text-yellow-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/>
+                            </svg>
+                            <span>Relatórios avançados</span>
+                        </li>
+                        <li className="flex items-center space-x-3">
+                            <svg className="w-5 h-5 text-yellow-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/>
+                            </svg>
+                            <span>Análise com IA</span>
+                        </li>
+                    </ul>
+                    <Link href="/register" className="w-full text-center block bg-white hover:bg-gray-100 text-teal-600 font-semibold py-3 rounded-lg transition duration-300 shadow-md">
+                        Escolher Plano Pro
+                    </Link>
+                </div>
+                
+                {/* Enterprise Plan */}
+                <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-8 relative">
+                     <div className="text-center mb-8">
+                        <h3 className="text-2xl font-bold text-gray-900 mb-2">Empresarial</h3>
+                        <div className="text-4xl font-bold text-gray-900 mb-1">900,00 MT</div>
+                        <div className="text-gray-600">Por mês</div>
                     </div>
                     <ul className="space-y-4 mb-8">
                         <li className="flex items-center space-x-3">
@@ -455,301 +490,76 @@ export default function HomePage() {
                             <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/>
                             </svg>
-                            <span>Análises com IA</span>
+                            <span>Multi-usuário</span>
                         </li>
-                        <li className="flex items-center space-x-3">
-                            <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/>
-                            </svg>
-                            <span>Controle de dívidas</span>
-                        </li>
-                        <li className="flex items-center space-x-3">
-                            <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/>
-                            </svg>
-                            <span>Relatórios avançados</span>
-                        </li>
-                        <li className="flex items-center space-x-3">
+                        <li className="flex items-center spacex-3">
                             <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/>
                             </svg>
                             <span>Suporte prioritário</span>
                         </li>
-                    </ul>
-                    <Link href="/login" className="w-full block text-center bg-teal-500 hover:bg-teal-600 text-white font-semibold py-3 rounded-lg transition duration-300 transform hover:scale-105">
-                        Começar Teste Grátis
-                    </Link>
-                </div>
-                
-                {/* Enterprise Plan */}
-                <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-8 relative">
-                    <div className="text-center mb-8">
-                        <h3 className="text-2xl font-bold text-gray-900 mb-2">Empresarial</h3>
-                        <div className="text-4xl font-bold text-gray-900 mb-1">1500 MT</div>
-                        <div className="text-gray-600">/mês</div>
-                    </div>
-                    <ul className="space-y-4 mb-8">
                         <li className="flex items-center space-x-3">
                             <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/>
                             </svg>
-                            <span>Tudo do Profissional</span>
-                        </li>
-                        <li className="flex items-center space-x-3">
-                            <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/>
-                            </svg>
-                            <span>Equipe de agentes autônomos no WhatsApp</span>
-                        </li>
-                        <li className="flex items-center space-x-3">
-                            <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/>
-                            </svg>
-                            <span>Múltiplos usuários</span>
-                        </li>
-                        <li className="flex items-center space-x-3">
-                            <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/>
-                            </svg>
-                            <span>API e Integrações</span>
-                        </li>
-                        <li className="flex items-center space-x-3">
-                            <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/>
-                            </svg>
-                            <span>Suporte 24/7</span>
+                             <span>Integrações customizadas</span>
                         </li>
                     </ul>
-                    <Link href="/login" className="w-full block text-center bg-gray-800 hover:bg-gray-900 text-white font-semibold py-3 rounded-lg transition duration-300">
-                        Contatar Vendas
+                     <Link href="/contact" className="w-full text-center block bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-3 rounded-lg transition duration-300">
+                        Contate-nos
                     </Link>
                 </div>
             </div>
-        </div>
-    </section>
-
-    {/* Testimonials Section */}
-    <section className="py-20 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-16">
-                <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-                    O que nossos clientes dizem
-                </h2>
-                <p className="text-xl text-gray-600">
-                    Veja como o SIGEF está transformando negócios
-                </p>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <div className="bg-white rounded-xl shadow-lg p-8 card-hover">
-                    <div className="flex items-center mb-6">
-                        <img className="w-12 h-12 rounded-full mr-4" src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop&crop=face" alt="Maria Silva" />
-                        <div>
-                            <h4 className="text-lg font-semibold text-gray-900">Maria Silva</h4>
-                            <p className="text-gray-600">Loja de Roupas</p>
-                        </div>
-                    </div>
-                    <div className="flex mb-4">
-                        <span className="text-yellow-400">★★★★★</span>
-                    </div>
-                    <p className="text-gray-600 italic">
-                        "O SIGEF revolucionou minha loja! Agora tenho controle total do estoque e as análises de IA me ajudaram a aumentar o lucro em 30%."
-                    </p>
-                </div>
-                
-                <div className="bg-white rounded-xl shadow-lg p-8 card-hover">
-                    <div className="flex items-center mb-6">
-                        <img className="w-12 h-12 rounded-full mr-4" src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face" alt="João Santos" />
-                        <div>
-                            <h4 className="text-lg font-semibold text-gray-900">João Santos</h4>
-                            <p className="text-gray-600">Supermercado</p>
-                        </div>
-                    </div>
-                    <div className="flex mb-4">
-                        <span className="text-yellow-400">★★★★★</span>
-                    </div>
-                    <p className="text-gray-600 italic">
-                        "Sistema muito fácil de usar. Minha equipe se adaptou rapidamente e agora temos relatórios precisos em tempo real."
-                    </p>
-                </div>
-                
-                <div className="bg-white rounded-xl shadow-lg p-8 card-hover">
-                    <div className="flex items-center mb-6">
-                        <img className="w-12 h-12 rounded-full mr-4" src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face" alt="Ana Costa" />
-                        <div>
-                            <h4 className="text-lg font-semibold text-gray-900">Ana Costa</h4>
-                            <p className="text-gray-600">Farmácia</p>
-                        </div>
-                    </div>
-                    <div className="flex mb-4">
-                        <span className="text-yellow-400">★★★★★</span>
-                    </div>
-                    <p className="text-gray-600 italic">
-                        "Finalmente encontrei um sistema completo que gerencia tudo que preciso. O controle de dívidas é fantástico!"
-                    </p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    {/* Stats Section */}
-    <section className="py-16 bg-teal-600">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-                <div className="text-white">
-                    <div className="text-3xl md:text-4xl font-bold mb-2">10K+</div>
-                    <div className="text-teal-100">Empresas Ativas</div>
-                </div>
-                <div className="text-white">
-                    <div className="text-3xl md:text-4xl font-bold mb-2">1M+</div>
-                    <div className="text-teal-100">Transações</div>
-                </div>
-                <div className="text-white">
-                    <div className="text-3xl md:text-4xl font-bold mb-2">99.9%</div>
-                    <div className="text-teal-100">Disponibilidade</div>
-                </div>
-                <div className="text-white">
-                    <div className="text-3xl md:text-4xl font-bold mb-2">24/7</div>
-                    <div className="text-teal-100">Suporte</div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    {/* FAQ Section */}
-    <section className="py-20 bg-white">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-16">
-                <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-                    Perguntas Frequentes
-                </h2>
-                <p className="text-xl text-gray-600">
-                    Tire suas dúvidas sobre o SIGEF
-                </p>
-            </div>
-            
-            <div className="space-y-6">
-                <div className="bg-gray-50 rounded-lg p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-3">Como funciona o período gratuito?</h3>
-                    <p className="text-gray-600">O plano gratuito é permanente e inclui até 50 produtos, controle de vendas e relatórios básicos. Você pode usar sem limite de tempo.</p>
-                </div>
-                
-                <div className="bg-gray-50 rounded-lg p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-3">Posso migrar meus dados de outro sistema?</h3>
-                    <p className="text-gray-600">Sim! Oferecemos suporte completo para importação de dados de planilhas Excel/CSV e outros sistemas de gestão.</p>
-                </div>
-                
-                <div className="bg-gray-50 rounded-lg p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-3">Como funciona a análise com IA?</h3>
-                    <p className="text-gray-600">Nossa IA analisa seus dados de vendas, estoque e fluxo financeiro para gerar insights e recomendações personalizadas para otimizar seu negócio.</p>
-                </div>
-                
-                <div className="bg-gray-50 rounded-lg p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-3">Meus dados estão seguros?</h3>
-                    <p className="text-gray-600">Absolutamente. Utilizamos criptografia de ponta, autenticação Google e backups automáticos para garantir total segurança dos seus dados.</p>
-                </div>
-                
-                <div className="bg-gray-50 rounded-lg p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-3">Posso cancelar a qualquer momento?</h3>
-                    <p className="text-gray-600">Sim, você pode cancelar seu plano pago a qualquer momento e voltar ao plano gratuito, mantendo seus dados.</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    {/* CTA Section */}
-    <section className="py-20 gradient-bg text-white relative overflow-hidden">
-        <div className="absolute inset-0 bg-black opacity-10"></div>
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
-            <h2 className="text-3xl md:text-4xl font-bold mb-6">
-                Pronto para transformar seu negócio?
-            </h2>
-            <p className="text-xl mb-8 opacity-90">
-                Junte-se a milhares de empresários que já escolheram o SIGEF para gerenciar suas finanças com inteligência.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-                <Link href="/login" className="bg-white text-teal-600 px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-100 transition duration-300 transform hover:scale-105 min-w-[250px]">
-                    🚀 Começar Gratuitamente Agora
-                </Link>
-                <Link href="#features" className="border-2 border-white text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-white hover:text-teal-600 transition duration-300 transform hover:scale-105 min-w-[200px]">
-                    📞 Falar com Vendas
-                </Link>
-            </div>
-            <p className="text-sm mt-6 opacity-75">
-                ✓ Sem compromisso ✓ Sem cartão de crédito ✓ Suporte em português
-            </p>
         </div>
     </section>
 
     {/* Footer */}
-    <footer className="bg-gray-900 text-white py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-                <div className="col-span-1 md:col-span-2">
-                    <div className="flex items-center mb-4">
-                        <div className="bg-gradient-to-r from-teal-500 to-teal-600 rounded-lg p-2">
-                            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
-                            </svg>
-                        </div>
-                        <span className="ml-2 text-2xl font-bold">SIGEF</span>
-                    </div>
-                    <p className="text-gray-400 mb-6 max-w-md">
-                        Sistema Intuitivo de Gestão Financeira - A solução completa para gerenciar seu negócio com inteligência artificial.
-                    </p>
-                    <div className="flex space-x-4">
-                        <a href="#" className="text-gray-400 hover:text-white transition duration-300">
-                            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z"/>
-                            </svg>
-                        </a>
-                        <a href="#" className="text-gray-400 hover:text-white transition duration-300">
-                            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M22.46 6c-.77.35-1.6.58-2.46.69.88-.53 1.56-1.37 1.88-2.38-.83.5-1.75.85-2.72 1.05C18.37 4.5 17.26 4 16 4c-2.35 0-4.27 1.92-4.27 4.29 0 .34.04.67.11.98C8.28 9.09 5.11 7.38 3 4.79c-.37.63-.58 1.37-.58 2.15 0 1.49.75 2.81 1.91 3.56-.71 0-1.37-.2-1.95-.5v.03c0 2.08 1.48 3.82 3.44 4.21a4.22 4.22 0 0 1-1.93.07 4.28 4.28 0 0 0 4 2.98 8.521 8.521 0 0 1-5.33 1.84c-.34 0-.68-.02-1.02-.06C3.44 20.29 5.7 21 8.12 21 16 21 20.33 14.46 20.33 8.79c0-.19 0-.37-.01-.56.84-.6 1.56-1.36 2.14-2.23z"/>
-                            </svg>
-                        </a>
-                        <a href="#" className="text-gray-400 hover:text-white transition duration-300">
-                            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
-                            </svg>
-                        </a>
-                    </div>
-                </div>
-                
+    <footer className="bg-white border-t border-gray-200">
+        <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
                 <div>
-                    <h3 className="text-lg font-semibold mb-4">Produto</h3>
-                    <ul className="space-y-2">
-                        <li><a href="#" className="text-gray-400 hover:text-white transition duration-300">Recursos</a></li>
-                        <li><a href="#" className="text-gray-400 hover:text-white transition duration-300">Preços</a></li>
-                        <li><a href="#" className="text-gray-400 hover:text-white transition duration-300">Atualizações</a></li>
-                        <li><a href="#" className="text-gray-400 hover:text-white transition duration-300">Roadmap</a></li>
+                    <h3 className="text-sm font-semibold text-gray-500 tracking-wider uppercase">Soluções</h3>
+                    <ul className="mt-4 space-y-4">
+                        <li><a href="#features" className="text-base text-gray-600 hover:text-gray-900">Gestão de Estoque</a></li>
+                        <li><a href="#features" className="text-base text-gray-600 hover:text-gray-900">Análise de Vendas</a></li>
+                        <li><a href="#features" className="text-base text-gray-600 hover:text-gray-900">Insights com IA</a></li>
                     </ul>
                 </div>
-                
-                <div>
-                    <h3 className="text-lg font-semibold mb-4">Suporte</h3>
-                    <ul className="space-y-2">
-                        <li><a href="#" className="text-gray-400 hover:text-white transition duration-300">Central de Ajuda</a></li>
-                        <li><a href="#" className="text-gray-400 hover:text-white transition duration-300">Documentação</a></li>
-                        <li><a href="#" className="text-gray-400 hover:text-white transition duration-300">Contato</a></li>
-                        <li><a href="#" className="text-gray-400 hover:text-white transition duration-300">Status</a></li>
+                 <div>
+                    <h3 className="text-sm font-semibold text-gray-500 tracking-wider uppercase">Suporte</h3>
+                    <ul className="mt-4 space-y-4">
+                        <li><a href="#pricing" className="text-base text-gray-600 hover:text-gray-900">Preços</a></li>
+                        <li><a href="/docs" className="text-base text-gray-600 hover:text-gray-900">Documentação</a></li>
+                        <li><a href="/contact" className="text-base text-gray-600 hover:text-gray-900">Contato</a></li>
+                    </ul>
+                </div>
+                 <div>
+                    <h3 className="text-sm font-semibold text-gray-500 tracking-wider uppercase">Empresa</h3>
+                    <ul className="mt-4 space-y-4">
+                        <li><a href="/about" className="text-base text-gray-600 hover:text-gray-900">Sobre Nós</a></li>
+                        <li><a href="/blog" className="text-base text-gray-600 hover:text-gray-900">Blog</a></li>
+                        <li><a href="/careers" className="text-base text-gray-600 hover:text-gray-900">Carreiras</a></li>
+                    </ul>
+                </div>
+                 <div>
+                    <h3 className="text-sm font-semibold text-gray-500 tracking-wider uppercase">Legal</h3>
+                    <ul className="mt-4 space-y-4">
+                        <li><a href="/politica-de-privacidade" className="text-base text-gray-600 hover:text-gray-900">Política de Privacidade</a></li>
+                        <li><a href="/termos-e-condicoes" className="text-base text-gray-600 hover:text-gray-900">Termos de Serviço</a></li>
                     </ul>
                 </div>
             </div>
-            
-            <div className="border-t border-gray-800 pt-8 mt-8 flex flex-col md:flex-row justify-between items-center">
-                <p className="text-gray-400 text-sm">
-                    © 2024 SIGEF. Todos os direitos reservados.
-                </p>
-                <div className="flex space-x-6 mt-4 md:mt-0">
-                    <Link href="/politica-de-privacidade" className="text-gray-400 hover:text-white text-sm transition duration-300">Política de Privacidade</Link>
-                    <Link href="/termos-e-condicoes" className="text-gray-400 hover:text-white text-sm transition duration-300">Termos de Uso</Link>
-                    <a href="#" className="text-gray-400 hover:text-white text-sm transition duration-300">Cookies</a>
+            <div className="mt-8 border-t border-gray-200 pt-8 md:flex md:items-center md:justify-between">
+                <div className="flex space-x-6 md:order-2">
+                    {/* Social media icons here */}
                 </div>
+                <p className="mt-8 text-base text-gray-500 md:mt-0 md:order-1">
+                    &copy; 2024 SIGEF. Todos os direitos reservados.
+                </p>
             </div>
         </div>
     </footer>
-    </div>
-    </>
-  );
-} 
+</div>
+</>
+);
+}

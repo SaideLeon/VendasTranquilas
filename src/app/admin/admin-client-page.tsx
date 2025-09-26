@@ -239,7 +239,3 @@ export default function AdminClientPage({ users: initialUsers, plans: initialPla
             <ScrollBar orientation="horizontal" />
           </ScrollArea>
         </CardContent>
-    </Card>
-    </div>
-  );
-}
