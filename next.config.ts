@@ -1,35 +1,42 @@
 import type {NextConfig} from 'next';
 
+/** @type {import('next').NextConfig} */
 const nextConfig: NextConfig = {
   /* config options here */
+  async rewrites() {
+    return [
+      {
+        source: '/api/:path*',
+        destination: 'https://sigef.cognick.qzz.io/api/:path*',
+      },
+    ]
+  },
+  reactStrictMode: true, // Enable React strict mode for highlighting potential problems
   typescript: {
-    ignoreBuildErrors: true,
+    // Dangerously allow production builds to successfully complete even if
+    // your project has type errors.
+     ignoreBuildErrors: true, // Keep this if needed, but try to fix type errors
   },
   eslint: {
-    ignoreDuringBuilds: true,
+    // Warning: This allows production builds to successfully complete even if
+    // your project has ESLint errors.
+     ignoreDuringBuilds: true, // Keep this if needed, but address lint issues
   },
-  images: {
+   images: {
     remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: 'placehold.co',
-        port: '',
-        pathname: '/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'images.unsplash.com',
-        port: '',
-        pathname: '/**',
-      },
       {
         protocol: 'https',
         hostname: 'picsum.photos',
         port: '',
         pathname: '/**',
       },
+      // Add other remote patterns if needed
     ],
   },
+  // You can add other configurations here, like experimental features
+   experimental: {
+     appDir: true, // Ensure App Router is enabled (default in newer Next.js versions)
+   },
 };
 
 export default nextConfig;
