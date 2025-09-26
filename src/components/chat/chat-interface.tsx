@@ -11,6 +11,8 @@ import { ChatAPI } from '@/lib/endpoints';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { cn } from '@/lib/utils';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 type Message = {
   sender: 'user' | 'ai';
@@ -133,7 +135,11 @@ export default function ChatInterface() {
                       : 'bg-muted'
                   )}
                 >
-                  <p className="whitespace-pre-wrap">{message.text}</p>
+                  <div className="prose prose-sm prose-invert max-w-none">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      {message.text}
+                    </ReactMarkdown>
+                  </div>
                   {message.sources && (
                     <p className="mt-2 text-xs text-muted-foreground italic">
                       Fonte: {message.sources.join(', ')}
