@@ -34,6 +34,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { AxiosError } from 'axios';
 
 // Define types based on the expected API response
 type UserWithSubscription = {
@@ -83,7 +84,11 @@ function ManageSubscriptionModal({ user, plans, onSubscriptionUpdate }: { user: 
       onSubscriptionUpdate();
       setIsOpen(false);
     } catch (error) {
-      toast({ title: "Erro", description: "Não foi possível renovar a assinatura.", variant: "destructive" });
+        if (error instanceof AxiosError && error.response) {
+            toast({ title: "Erro", description: error.response?.data?.message || "Não foi possível renovar a assinatura.", variant: "destructive" });
+        } else {
+            toast({ title: "Erro", description: "Não foi possível renovar a assinatura.", variant: "destructive" });
+        }
     }
   };
 
@@ -101,7 +106,11 @@ function ManageSubscriptionModal({ user, plans, onSubscriptionUpdate }: { user: 
       onSubscriptionUpdate();
       setIsOpen(false);
     } catch (error) {
-      toast({ title: "Erro", description: "Não foi possível desativar a assinatura.", variant: "destructive" });
+       if (error instanceof AxiosError && error.response) {
+            toast({ title: "Erro", description: error.response?.data?.message || "Não foi possível desativar a assinatura.", variant: "destructive" });
+        } else {
+            toast({ title: "Erro", description: "Não foi possível desativar a assinatura.", variant: "destructive" });
+        }
     }
   };
 
@@ -145,9 +154,13 @@ export default function AdminClientPage({ users: initialUsers, plans: initialPla
     const [plans, setPlans] = useState(initialPlans);
 
     const refreshData = async () => {
-        const [usersRes, plansRes] = await Promise.all([AdminAPI.getAllUsersWithSubscription(), AdminAPI.getPlans()]);
-        setUsers(usersRes.data);
-        setPlans(plansRes.data);
+        try {
+            const [usersRes, plansRes] = await Promise.all([AdminAPI.getAllUsersWithSubscription(), AdminAPI.getPlans()]);
+            setUsers(usersRes.data);
+            setPlans(plansRes.data);
+        } catch (error) {
+            console.error("Failed to refresh data:", error);
+        }
     };
 
     return (
@@ -239,3 +252,7 @@ export default function AdminClientPage({ users: initialUsers, plans: initialPla
             <ScrollBar orientation="horizontal" />
           </ScrollArea>
         </CardContent>
+      </Card>
+    </div>
+  );
+}
