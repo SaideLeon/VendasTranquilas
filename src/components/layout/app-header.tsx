@@ -144,7 +144,6 @@ export default function AppHeader() {
                 <TabsTrigger value="produtos" asChild><Link href="/produtos"><Package className="mr-2 h-4 w-4" /> Produtos</Link></TabsTrigger>
                 <TabsTrigger value="vendas" asChild><Link href="/vendas"><ShoppingCart className="mr-2 h-4 w-4" /> Vendas</Link></TabsTrigger>
                 <TabsTrigger value="dividas" asChild><Link href="/dividas"><HandCoins className="mr-2 h-4 w-4" /> Dívidas</Link></TabsTrigger>
-                <TabsTrigger value="despesas" asChild><Link href="/despesas/operacionais"><ReceiptText className="mr-2 h-4 w-4" /> Despesas operacionais</Link></TabsTrigger>
                 <TabsTrigger value="relatorios" asChild><Link href="/relatorios"><BarChart3 className="mr-2 h-4 w-4" /> Relatórios</Link></TabsTrigger>
                 <TabsTrigger value="insights" asChild><Link href="/insights"><BrainCircuit className="mr-2 h-4 w-4" /> Insights AI</Link></TabsTrigger>
                 <TabsTrigger value="chat" asChild><Link href="/chat"><Bot className="mr-2 h-4 w-4" /> Chat AI</Link></TabsTrigger>
@@ -260,7 +259,6 @@ export default function AppHeader() {
               <TabsTrigger value="produtos" asChild className="h-full"><Link href="/produtos" className="flex flex-col items-center justify-center text-xs gap-1 w-20"><Package className="h-4 w-4" /> Produtos</Link></TabsTrigger>
               <TabsTrigger value="vendas" asChild className="h-full"><Link href="/vendas" className="flex flex-col items-center justify-center text-xs gap-1 w-20"><ShoppingCart className="h-4 w-4" /> Vendas</Link></TabsTrigger>
               <TabsTrigger value="dividas" asChild className="h-full"><Link href="/dividas" className="flex flex-col items-center justify-center text-xs gap-1 w-20"><HandCoins className="h-4 w-4" /> Dívidas</Link></TabsTrigger>
-              <TabsTrigger value="despesas" asChild className="h-full"><Link href="/despesas/operacionais" className="flex flex-col items-center justify-center text-xs gap-1 w-20"><ReceiptText className="h-4 w-4" /> Despesas</Link></TabsTrigger>
               <TabsTrigger value="relatorios" asChild className="h-full"><Link href="/relatorios" className="flex flex-col items-center justify-center text-xs gap-1 w-20"><BarChart3 className="h-4 w-4" /> Relatórios</Link></TabsTrigger>
               <TabsTrigger value="insights" asChild className="h-full"><Link href="/insights" className="flex flex-col items-center justify-center text-xs gap-1 w-20"><BrainCircuit className="h-4 w-4" /> Insights</Link></TabsTrigger>
               <TabsTrigger value="chat" asChild className="h-full"><Link href="/chat" className="flex flex-col items-center justify-center text-xs gap-1 w-20"><Bot className="h-4 w-4" /> Chat</Link></TabsTrigger>

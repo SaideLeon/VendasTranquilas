@@ -9,8 +9,7 @@ import { OverviewCards } from "@/components/dashboard/overview-cards";
 import { CashFlowChart } from "@/components/dashboard/cash-flow-chart";
 import { RecentTransactions } from "@/components/dashboard/recent-transactions";
 import { transactions } from "@/lib/data";
-import { subMonths, startOfMonth, endOfMonth } from 'date-fns';
-import { Header } from "@/components/header";
+import { subMonths, startOfMonth, endOfMonth } from 'date-fns'; 
 
 export default function DashboardPage() {
   const now = new Date();
@@ -46,8 +45,7 @@ export default function DashboardPage() {
   const recentTransactions = transactions.slice(0, 5);
 
   return (
-    <div className="flex flex-1 flex-col">
-      <Header title="Dashboard" />
+    <div className="flex flex-1 flex-col"> 
       <main className="flex-1 space-y-4 p-4 md:p-6">
         <OverviewCards 
           totalIncome={totalIncome}

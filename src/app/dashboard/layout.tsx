@@ -6,8 +6,7 @@ import {
   SidebarHeader,
   SidebarContent,
   SidebarInset,
-} from "@/components/ui/sidebar";
-import { Logo } from "@/components/ui/Logo";
+} from "@/components/ui/sidebar"; 
 
 export default function DashboardLayout({
   children,
@@ -18,7 +17,7 @@ export default function DashboardLayout({
     <SidebarProvider>
       <Sidebar>
         <SidebarHeader>
-          <Logo />
+          
         </SidebarHeader>
         <SidebarContent>
           {/* DashboardNav can be placed here if needed */}

@@ -1,4 +1,4 @@
-import { Header } from "@/components/header";
+ ;
 import {
   Card,
   CardContent,
@@ -54,8 +54,7 @@ export default function ReportsPage() {
 
 
   return (
-    <div className="flex flex-1 flex-col">
-      <Header title="Relatórios" />
+    <div className="flex flex-1 flex-col"> 
       <main className="flex-1 space-y-4 p-4 md:p-6">
         <div className="grid gap-4 md:grid-cols-2">
             <Card>

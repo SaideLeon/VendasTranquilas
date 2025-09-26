@@ -1,12 +1,11 @@
-import { Header } from "@/components/header";
+ 
 import { budgets } from "@/lib/data";
 import { BudgetCard } from "@/components/budgets/budget-card";
 import { BudgetDialog } from "@/components/budgets/budget-dialog";
 
 export default function BudgetsPage() {
   return (
-    <div className="flex flex-1 flex-col">
-      <Header title="Orçamentos" />
+    <div className="flex flex-1 flex-col"> 
       <main className="flex-1 space-y-4 p-4 md:p-6">
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-semibold tracking-tight">
