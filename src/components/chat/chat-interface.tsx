@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Send, RefreshCw, Loader2, Bot, User, Sparkles } from 'lucide-react';
+import { Send, RefreshCw, Loader2, Bot, User, Sparkles, Mic } from 'lucide-react';
 import { ChatAPI } from '@/lib/endpoints';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback } from '../ui/avatar';
@@ -177,13 +177,13 @@ export default function ChatInterface() {
                   className={cn(
                     'max-w-[75%] rounded-2xl px-4 py-3 text-sm shadow-sm',
                     message.sender === 'user'
-                      ? 'bg-primary text-primary-foreground rounded-br-sm'
+                      ? 'bg-primary text-primary-foreground rounded-br-sm [&_*]:text-primary-foreground'
                       : 'bg-muted rounded-bl-sm'
                   )}
                 >
                   <div className={cn(
-                    "prose prose-sm max-w-none",
-                    message.sender === 'user' ? 'prose-invert' : ''
+                    "prose prose-sm max-w-none [&_p]:leading-relaxed",
+                    message.sender === 'user' ? 'prose-invert [&_*]:text-primary-foreground' : ''
                   )}>
                     <ReactMarkdown 
                       remarkPlugins={[remarkGfm]}
@@ -199,7 +199,12 @@ export default function ChatInterface() {
                   
                   {message.sources && message.sources.length > 0 && (
                     <div className="mt-3 pt-2 border-t border-border/50">
-                      <p className="text-xs text-muted-foreground/80 flex items-center gap-1">
+                      <p className={cn(
+                        "text-xs flex items-center gap-1",
+                        message.sender === 'user' 
+                          ? 'text-primary-foreground/80' 
+                          : 'text-muted-foreground/80'
+                      )}>
                         <span className="font-medium">Fontes:</span>
                         <span>{message.sources.join(', ')}</span>
                       </p>
@@ -239,6 +244,21 @@ export default function ChatInterface() {
       <div className="border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="p-4">
           <div className="flex items-center gap-2">
+            <Button 
+              onClick={() => {
+                toast({
+                  title: 'Em breve!',
+                  description: 'A funcionalidade de áudio será implementada em breve.',
+                });
+              }}
+              variant="outline"
+              size="icon"
+              className="rounded-full h-10 w-10 shrink-0"
+              disabled={isLoading}
+            >
+              <Mic className="h-4 w-4" />
+              <span className="sr-only">Gravar áudio</span>
+            </Button>
             <Input
               ref={inputRef}
               value={input}
