@@ -93,8 +93,9 @@ export default function AdminPage() {
   }
 
   if (isAdmin) {
-    return <AdminClientPage users={users} plans={plans} />; 
+    return <AdminClientPage users={users} plans={plans} />;
   }
 
   // This should ideally not be reached due to redirects, but as a fallback:
-  return null
+  return null;
+}

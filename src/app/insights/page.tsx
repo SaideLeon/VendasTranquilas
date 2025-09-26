@@ -316,4 +316,9 @@ export default function InsightsPage() {
                 ))}
               </TableBody>
             </Table>
-          </DialogContent
+          </DialogContent>
+        </Dialog>
+      )}
+    </TooltipProvider>
+  );
+}

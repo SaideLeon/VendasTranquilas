@@ -102,4 +102,12 @@ export default function LoginPage() {
           </form>
           <div className="mt-4 text-center text-sm">
             Não tem uma conta?{" "}
-            <Link href="/register" className="
+            <Link href="/register" className="underline">
+              Registre-se
+            </Link>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

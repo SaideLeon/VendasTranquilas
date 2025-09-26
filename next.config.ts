@@ -34,9 +34,6 @@ const nextConfig: NextConfig = {
     ],
   },
   // You can add other configurations here, like experimental features
-   experimental: {
-     appDir: true, // Ensure App Router is enabled (default in newer Next.js versions)
-   },
 };
 
 export default nextConfig;
