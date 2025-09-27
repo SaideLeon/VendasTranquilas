@@ -50,8 +50,7 @@ export default function AppHeader() {
   const getActiveTab = () => {
     if (pathname.startsWith("/dashboard/transactions")) return "transactions";
     if (pathname.startsWith("/dashboard/budgets")) return "budgets";
-    if (pathname.startsWith("/dashboard/reports")) return "reports";
-    if (pathname.startsWith("/dashboard")) return "dashboard";
+    if (pathname.startsWith("/dashboard/reports")) return "reports"; 
     if (pathname.startsWith("/produtos")) return "produtos";
     if (pathname.startsWith("/vendas")) return "vendas";
     if (pathname.startsWith("/dividas")) return "dividas";
@@ -136,9 +135,7 @@ export default function AppHeader() {
           </TooltipProvider>
           <ScrollArea className="hidden md:block whitespace-nowrap">
             <Tabs value={getActiveTab()}>
-              <TabsList>
-                <TabsTrigger value="dashboard" asChild><Link href="/dashboard"><LayoutDashboard className="mr-2 h-4 w-4" /> Dashboard</Link></TabsTrigger>
-                <TabsTrigger value="transactions" asChild><Link href="/dashboard/transactions"><ArrowLeftRight className="mr-2 h-4 w-4" /> Transações</Link></TabsTrigger>
+              <TabsList>  <TabsTrigger value="transactions" asChild><Link href="/dashboard/transactions"><ArrowLeftRight className="mr-2 h-4 w-4" /> Transações</Link></TabsTrigger>
                 <TabsTrigger value="budgets" asChild><Link href="/dashboard/budgets"><PiggyBank className="mr-2 h-4 w-4" /> Orçamentos</Link></TabsTrigger>
                 <TabsTrigger value="reports" asChild><Link href="/dashboard/reports"><AreaChart className="mr-2 h-4 w-4" /> Relatórios</Link></TabsTrigger>
                 <TabsTrigger value="produtos" asChild><Link href="/produtos"><Package className="mr-2 h-4 w-4" /> Produtos</Link></TabsTrigger>
@@ -252,7 +249,6 @@ export default function AppHeader() {
         <ScrollArea className="w-full whitespace-nowrap">
           <Tabs value={getActiveTab()} className="p-1">
             <TabsList className="h-12">
-              <TabsTrigger value="dashboard" asChild className="h-full"><Link href="/dashboard" className="flex flex-col items-center justify-center text-xs gap-1 w-20"><LayoutDashboard className="h-4 w-4" /> Dashboard</Link></TabsTrigger>
               <TabsTrigger value="transactions" asChild className="h-full"><Link href="/dashboard/transactions" className="flex flex-col items-center justify-center text-xs gap-1 w-20"><ArrowLeftRight className="h-4 w-4" /> Transações</Link></TabsTrigger>
               <TabsTrigger value="budgets" asChild className="h-full"><Link href="/dashboard/budgets" className="flex flex-col items-center justify-center text-xs gap-1 w-20"><PiggyBank className="h-4 w-4" /> Orçamentos</Link></TabsTrigger>
               <TabsTrigger value="reports" asChild className="h-full"><Link href="/dashboard/reports" className="flex flex-col items-center justify-center text-xs gap-1 w-20"><AreaChart className="h-4 w-4" /> Relatórios</Link></TabsTrigger>
