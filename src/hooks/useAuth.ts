@@ -1,6 +1,9 @@
+// src/hooks/useAuth.ts
+'use client';
+
 import { useEffect, useState } from "react";
 import { jwtDecode } from "jwt-decode";
-import { usePathname } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 
 interface User {
   id: string;
@@ -9,41 +12,62 @@ interface User {
   role: string;
 }
 
+const PUBLIC_PATHS = ["/login", "/register", "/", "/politica-de-privacidade", "/termos-e-condicoes"];
+
 export function useAuth() {
+  const router = useRouter();
+  const pathname = usePathname();
   const [token, setToken] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [isAuthenticating, setIsAuthenticating] = useState(true);
-  const pathname = usePathname();
 
   useEffect(() => {
     // This effect runs only on the client side
-    const t = localStorage.getItem("token");
-    const isPublicPath = pathname === "/login" || pathname === "/register" || pathname === "/" || pathname === "/politica-de-privacidade" || pathname === "/termos-e-condicoes";
+    const storedToken = localStorage.getItem("token");
+    const isPublicPath = PUBLIC_PATHS.includes(pathname);
 
-    if (!t) {
+    if (!storedToken) {
+      // No token found in storage
       if (!isPublicPath) {
-        // If no token and not on a public page, redirect to login
-        window.location.href = "/login";
+        // If it's a protected route, redirect to login
+        router.push("/login");
       } else {
-        // If on a public page, no token is needed
+        // If it's a public route, no auth is needed, stop loading
         setIsAuthenticating(false);
       }
-    } else {
-      setToken(t);
-      try {
-        const decodedUser: User = jwtDecode(t);
-        setUser(decodedUser);
-      } catch (error) {
-        console.error("Invalid token:", error);
-        localStorage.removeItem("token");
-        if (!isPublicPath) {
-          window.location.href = "/login";
-        }
-      } finally {
-        setIsAuthenticating(false);
-      }
+      return; // Stop further execution in this effect run
     }
-  }, [pathname]);
+
+    // Token found, now validate it
+    try {
+      const decodedUser: User = jwtDecode(storedToken);
+      const tokenExp = (decodedUser as any).exp; // exp is in seconds
+
+      if (tokenExp * 1000 < Date.now()) {
+        // Token is expired
+        throw new Error("Token expired");
+      }
+
+      // Token is valid, set user and token state
+      setToken(storedToken);
+      setUser(decodedUser);
+
+    } catch (error) {
+      console.error("Authentication error:", error);
+      // If token is invalid or expired, clear it
+      localStorage.removeItem("token");
+      setToken(null);
+      setUser(null);
+
+      if (!isPublicPath) {
+        // Redirect to login if on a protected route
+        router.push("/login");
+      }
+    } finally {
+      // Finished authentication process
+      setIsAuthenticating(false);
+    }
+  }, [pathname, router]);
 
   return { token, user, isAuthenticating };
 }
