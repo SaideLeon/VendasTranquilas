@@ -26,7 +26,7 @@ export default function RootLayout({
     <html lang="pt-BR">
       <head>
         <meta charSet="UTF-8" />
-        <meta name="theme-color" content="#000000" />
+        <meta name="theme-color" content="#4DB6AC" />
       </head>
       <body
         className={cn(
