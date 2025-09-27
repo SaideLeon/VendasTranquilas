@@ -3,6 +3,7 @@ import { DataTable } from "@/components/transactions/data-table";
 import { columns } from "@/components/transactions/columns";
 import { transactions } from "@/lib/data";
 import { AddTransactionSheet } from "@/components/transactions/add-transaction-sheet";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function TransactionsPage() {
   const data = transactions;
@@ -16,7 +17,11 @@ export default function TransactionsPage() {
           </h2>
           <AddTransactionSheet />
         </div>
-        <DataTable columns={columns} data={data} />
+        <Card>
+            <CardContent className="p-0">
+                <DataTable columns={columns} data={data} />
+            </CardContent>
+        </Card>
       </main>
     </div>
   );
