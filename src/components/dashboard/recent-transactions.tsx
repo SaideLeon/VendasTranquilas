@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import type { Transaction } from "@/lib/types";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { cn } from "@/lib/utils";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 
 export function RecentTransactions({
   transactions,
@@ -17,41 +18,45 @@ export function RecentTransactions({
   transactions: Transaction[];
 }) {
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Descrição</TableHead>
-          <TableHead>Categoria</TableHead>
-          <TableHead className="text-right">Valor</TableHead>
-          <TableHead className="hidden sm:table-cell">Data</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {transactions.map((transaction) => (
-          <TableRow key={transaction.id}>
-            <TableCell>
-              <div className="font-medium">{transaction.description}</div>
-            </TableCell>
-            <TableCell>
-              <Badge variant="outline">{transaction.category}</Badge>
-            </TableCell>
-            <TableCell
-              className={cn(
-                "text-right",
-                transaction.type === "income"
-                  ? "text-green-600"
-                  : "text-red-600"
-              )}
-            >
-              {transaction.type === "income" ? "" : "-"}
-              {formatCurrency(transaction.amount)}
-            </TableCell>
-            <TableCell className="hidden sm:table-cell">
-              {formatDate(transaction.date)}
-            </TableCell>
+    <ScrollArea className="whitespace-nowrap rounded-md border">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Descrição</TableHead>
+            <TableHead>Categoria</TableHead>
+            <TableHead className="text-right">Valor</TableHead>
+            <TableHead className="hidden sm:table-cell">Data</TableHead>
           </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+        </TableHeader>
+        <TableBody>
+          {transactions.map((transaction) => (
+            <TableRow key={transaction.id}>
+              <TableCell>
+                <div className="font-medium">{transaction.description}</div>
+              </TableCell>
+              <TableCell>
+                <Badge variant="outline">{transaction.category}</Badge>
+              </TableCell>
+              <TableCell
+                className={cn(
+                  "text-right",
+                  transaction.type === "income"
+                    ? "text-green-600"
+                    : "text-red-600"
+                )}
+              >
+                {transaction.type === "income" ? "" : "-"}
+                {formatCurrency(transaction.amount)}
+              </TableCell>
+              <TableCell className="hidden sm:table-cell">
+                {formatDate(transaction.date)}
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+      <ScrollBar orientation="horizontal" />
+    </ScrollArea>
   );
 }
+    
