@@ -161,6 +161,11 @@ export const useStore = create<AppState>()(
             setCurrency: (currencyCode) => set({ currency: currencyCode }),
 
             initializeData: async () => {
+                if (typeof window === 'undefined' || !localStorage.getItem('token')) {
+                    set({ isLoading: false }); // Stop loading if no token/on server
+                    return;
+                }
+                
                 console.log("Initializing data from API...");
                 set({ isLoading: true, error: null });
                 try {
