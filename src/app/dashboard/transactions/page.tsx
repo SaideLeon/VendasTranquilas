@@ -10,10 +10,7 @@ export default function TransactionsPage() {
   return (
     <div className="container mx-auto p-4 space-y-8">
       <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-semibold tracking-tight">
-            Transações
-          </h2>
-          <AddTransactionSheet />
+           <AddTransactionSheet />
         </div>
         <Card>
             <CardContent className="p-0">

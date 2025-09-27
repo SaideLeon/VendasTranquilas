@@ -7,10 +7,7 @@ export default function BudgetsPage() {
   return (
     <div className="flex flex-1 flex-col">
       <main className="flex-1 space-y-4 p-4 md:p-6">
-        <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-semibold tracking-tight">
-            Seus Orçamentos
-          </h2>
+        <div className="flex items-center justify-between"> 
           <BudgetDialog />
         </div>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">

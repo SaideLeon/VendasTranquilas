@@ -1,10 +1,6 @@
 'use client';
 
-import {
-  SidebarProvider,
-  Sidebar,
-  SidebarHeader,
-  SidebarContent,
+import { 
   SidebarInset,
 } from "@/components/ui/sidebar"; 
 
@@ -13,17 +9,7 @@ export default function DashboardLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  return (
-    <SidebarProvider>
-      <Sidebar>
-        <SidebarHeader>
-          
-        </SidebarHeader>
-        <SidebarContent>
-          {/* DashboardNav can be placed here if needed */}
-        </SidebarContent>
-      </Sidebar>
-      <SidebarInset>{children}</SidebarInset>
-    </SidebarProvider>
+  return ( 
+      <SidebarInset>{children}</SidebarInset> 
   );
 }
