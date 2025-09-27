@@ -71,7 +71,7 @@ export default function ProductList({ products, onEdit, onDelete, onViewDetails 
   const formatDate = (dateString: string) => {
       try {
          return format(new Date(dateString), "dd/MM/yyyy HH:mm", { locale: ptBR });
-      } catch (e) {
+      } catch {
           return "Data inválida";
       }
   };

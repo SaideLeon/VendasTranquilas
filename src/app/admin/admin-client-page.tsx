@@ -256,4 +256,3 @@ export default function AdminClientPage({ users: initialUsers, plans: initialPla
     </div>
   );
 }
-    

@@ -194,7 +194,7 @@ export default function DebtList({ title, debts, onEdit, onDelete, onViewDetails
                     const remainingAmount = debt.amount - debt.amountPaid;
                     const progress = debt.amount > 0 ? (debt.amountPaid / debt.amount) * 100 : 0;
 
-                    return (// Ensure no whitespace before/after this tag
+                    return (
                       <TableRow key={debt.id}>
                         <TableCell className="sticky left-0 bg-background z-10 font-medium">{debt.description}</TableCell>
                         <TableCell className="text-right">{formatValue(debt.amount)}</TableCell>
@@ -223,7 +223,7 @@ export default function DebtList({ title, debts, onEdit, onDelete, onViewDetails
                         <TableCell>{formatDate(debt.createdAt)}</TableCell>
                         <TableCell className="sticky right-0 bg-background z-10 text-right space-x-1">
                            {/* Quick Pay/Update */}
-                           {debt.status !== 'paid' && (// Ensure no whitespace before/after this tag
+                           {debt.status !== 'paid' && (
                                 <DropdownMenu onOpenChange={(open) => { if (!open) setQuickPayDebtId(null); }}>
                                     <DropdownMenuTrigger asChild>
                                         <Button variant="outline" size="icon" aria-label={`Registrar pagamento para ${debt.description}`}>
@@ -257,7 +257,7 @@ export default function DebtList({ title, debts, onEdit, onDelete, onViewDetails
                                              Marcar como Totalmente Pago
                                          </DropdownMenuItem>
                                     </DropdownMenuContent>
-                                </DropdownMenu>// Ensure no whitespace before/after this tag
+                                </DropdownMenu>
                             )}
                             {/* Actions */}
                           <Button variant="outline" size="icon" onClick={() => onViewDetails(debt)} aria-label={`Visualizar detalhes de ${debt.description}`}>
@@ -286,10 +286,10 @@ export default function DebtList({ title, debts, onEdit, onDelete, onViewDetails
                             </AlertDialogContent>
                           </AlertDialog>
                         </TableCell>
-                      </TableRow>// Ensure no whitespace before/after this tag
+                      </TableRow>
                     );
                   })
-                ) : (// Ensure no whitespace before/after this tag
+                ) : (
                   <TableRow>
                     <TableCell colSpan={10} className="text-center h-24">{/* Adjusted colspan */}
                       <div className="flex flex-col items-center justify-center gap-2">
@@ -299,7 +299,7 @@ export default function DebtList({ title, debts, onEdit, onDelete, onViewDetails
                         </p>
                       </div>
                     </TableCell>
-                  </TableRow>// Ensure no whitespace before/after this tag
+                  </TableRow>
                 )}
               </TableBody>
             </Table>

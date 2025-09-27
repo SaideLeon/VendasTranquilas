@@ -82,9 +82,9 @@ export default function SalesList({ sales, onDelete, onViewDetails }: SalesListP
       <CardContent>
         <ScrollArea className="w-full whitespace-nowrap rounded-md border">
           <TooltipProvider>
-            <Table className="min-w-max">{/* Ensure no whitespace */}
-              <TableHeader className="sticky top-0 bg-background z-10">{/* Ensure no whitespace */}
-                <TableRow>{/* Ensure no whitespace */}
+            <Table className="min-w-max">
+              <TableHeader className="sticky top-0 bg-background z-10">
+                <TableRow>
                   <TableHead className="min-w-[150px] sticky left-0 bg-background z-20">Produto</TableHead>
                   <TableHead className="text-right min-w-[80px]">Qtd.</TableHead>
                   <TableHead className="text-right min-w-[120px]">Valor Venda</TableHead>
@@ -93,10 +93,10 @@ export default function SalesList({ sales, onDelete, onViewDetails }: SalesListP
                   <TableHead className="text-right min-w-[140px] sticky right-0 bg-background z-20">Ações</TableHead>
                 </TableRow>
               </TableHeader>
-              <TableBody>{/* Ensure no whitespace */}
+              <TableBody>
                 {sortedSales.length > 0 ? (
                   sortedSales.map((sale) => (
-                    <TableRow key={sale.id}>{/* Ensure no whitespace */}
+                    <TableRow key={sale.id}>
                       <TableCell className="font-medium flex items-center gap-2 sticky left-0 bg-background z-10">
                         {sale.productName}
                         {sale.isLoss && (
@@ -160,7 +160,7 @@ export default function SalesList({ sales, onDelete, onViewDetails }: SalesListP
                     </TableRow>
                   ))
                 ) : (
-                  <TableRow>{/* Ensure no whitespace */}
+                  <TableRow>
                     <TableCell colSpan={6} className="text-center h-24">
                       <div className="flex flex-col items-center justify-center gap-2">
                         <PackageX className="h-8 w-8 text-muted-foreground"/>
