@@ -10,6 +10,7 @@ import { CashFlowChart } from "@/components/dashboard/cash-flow-chart";
 import { RecentTransactions } from "@/components/dashboard/recent-transactions";
 import { transactions } from "@/lib/data";
 import { subMonths, startOfMonth, endOfMonth } from 'date-fns'; 
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 
 export default function DashboardPage() {
   const now = new Date();
@@ -69,7 +70,10 @@ export default function DashboardPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <RecentTransactions transactions={recentTransactions} />
+              <ScrollArea className="whitespace-nowrap rounded-md">
+                <RecentTransactions transactions={recentTransactions} />
+                <ScrollBar orientation="horizontal" />
+              </ScrollArea>
             </CardContent>
           </Card>
         </div>
